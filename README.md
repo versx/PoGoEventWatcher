@@ -11,6 +11,7 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 1. Install dependencies `npm install`  
 1. Copy config `cp src/config.example.json src/config.json`  
 1. Fill out config.json  
+1. Create locales `npm run create-locales`  
 1. Start `npm start`  
 
 ## Configuration  
