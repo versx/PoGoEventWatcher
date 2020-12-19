@@ -33,8 +33,23 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 }
 ```
 
-## Available Commands
+## Commands
 - Name: `events`  
 - Description: `Replies with all events or only the active ones, optionally it'll send it to a specific channel.`
 - Aliases: `e`  
 - Arguments: `[active] [#channel_id]`  
+
+Examples:  
+```sh
+# Reply to current channel/dm with all events
+!events
+# Send all events to #pogo-updates channel
+!events #pogo-updates
+# Reply to current channel/dm with only active events
+!events active
+# Send only active events to #pogo-updates channel
+!events active #pogo-updates
+```
+
+## Previews  
+![Webhook Example](examples/webhook.png)
