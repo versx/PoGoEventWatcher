@@ -1,0 +1,9 @@
+{
+    "locale": "en",
+    "prefix": "!",
+    "token": "<DISCORD_BOT_TOKEN>",
+    "botChannelIds": ["0000000000000000"],
+    "userIds": ["0000000000000000"],
+    "mention": "@0000000000000000",
+    "webhooks": []
+}
