@@ -15,8 +15,8 @@ module.exports = (message) => {
 
     const args = message.content.slice(config.prefix.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
-    const command = client.commands.get(commandName) 
-        || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
+    const command = message.client.commands.get(commandName) 
+        || message.client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
     if (!command)
         return;
 
