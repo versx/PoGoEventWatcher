@@ -9,11 +9,12 @@ const config = require('../config.json');
 module.exports = (message) => {
     if (!message.content.startsWith(config.prefix) || message.author.bot)
         return;
+
     if (!config.botChannelIds.includes(message.channel.id) && message.channel.type !== 'dm')
         return;
 
-	const args = message.content.slice(config.prefix.length).trim().split(/ +/);
-	const commandName = args.shift().toLowerCase();
+    const args = message.content.slice(config.prefix.length).trim().split(/ +/);
+    const commandName = args.shift().toLowerCase();
     const command = client.commands.get(commandName) 
         || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
     if (!command)
