@@ -25,12 +25,21 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
     "token": "<DISCORD_BOT_TOKEN>",
     // List of Discord channel ids to accept bot commands from
     "botChannelIds": ["0000000000000000"],
+    // Owner Discord Id for owner only commands
+    "ownerId": "0000000000000000",
     // List Discord user ids to send event changes to
     "userIds": ["0000000000000000"],
     // Discord user/role mention string for event changes embed
     "mention": "@0000000000000000",
     // Webhook channel urls to send event changes to
-    "webhooks": []
+    "webhooks": [],
+    // List of guilds to update active events channels with
+    "guilds": [{
+        // Guild ID
+        "id": "0000000000000000",
+        // Event category channel ID
+        "eventsCategoryId": "0000000000000000"
+    }]
 }
 ```
 
@@ -42,12 +51,8 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 
 Examples:  
 ```sh
-# Reply to current channel/dm with all events
-!events
 # Send all events to #pogo-updates channel
 !events #pogo-updates
-# Reply to current channel/dm with only active events
-!events active
 # Send only active events to #pogo-updates channel
 !events active #pogo-updates
 ```

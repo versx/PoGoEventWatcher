@@ -20,9 +20,13 @@ module.exports = (message) => {
     if (!command)
         return;
 
+    if (command.ownerOnly && message.author.id !== config.ownerId)
+        return message.reply({ embed: { description: ':x: **Access Not Granted** You do not have permission to execute this command.', color: 0xff1100 }});
+
     if (command.guildOnly && message.channel.type === 'dm') {
-        return message.reply({ embed: { description: 'I can\'t execute that command inside DMs!', color: 0xff1100} });
+        return message.reply({ embed: { description: 'Command does not support DM messages!', color: 0xff1100} });
     }
+
     if (command.args && !args.length) {
         let reply = `You didn't provide any arguments, ${message.author}!`;
         if (command.usage) {

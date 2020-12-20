@@ -31,28 +31,34 @@ const DiscordColors = {
 module.exports = {
     name: 'events',
     aliases: ['e'],
-    usage: '[active] [<#9832798478924>]\n\t\t[<#9832798478924>]',
-    //args: true,
-	description: 'Post all Pokemon events or provide `active` as an argument for only active events.',
+    ownerOnly: true,
+    usage: '<#9832798478924> [active]\n\t\t<#9832798478924>',
+    args: true,
+	description: 'Post all Pokemon events or provide `active` as an argument for only active events to a specific channel.',
 	async execute(message, args) {
-        let channel;
-        if (args.length > 0) {
-            if (args.includes('active')) {
-                if (args.length === 2) {
-                    const mention = args.filter(x => x !== 'active')[0];
-                    if (!mention) {
-                        message.reply({ embed: { description: `Failed to find channel with mention ${mention}`, color: 0xff1100 }});
-                        return;
-                    }
-                    channel = getChannelFromMention(message.client, mention);
-                }
-                await postActiveEvents(message, channel);
-                return;
-            } else if (args.length === 1) {
-                channel = getChannelFromMention(message.client, args[0]);
-            }
+        let channelId;
+        let activeOnly = false;
+        switch (args.length) {
+            case 1:
+                // channel id
+                channelId = args[0];
+                break;
+            case 2:
+                // channel id and active
+                channelId = args[0];
+                activeOnly = args[1].toLowerCase() === 'active';
+                break;
         }
-        await postAllEvents(message, channel);
+        const channel = getChannelFromMention(message.client, channelId);
+        if (!channel) {
+            message.reply({ embed: { description: `Failed to find channel with mention ${mention}`, color: 0xff1100 }});
+            return;
+        }
+        if (activeOnly) {
+            await postActiveEvents(message, channel);
+        } else {
+            await postAllEvents(message, channel);
+        }
 	},
 };
 
