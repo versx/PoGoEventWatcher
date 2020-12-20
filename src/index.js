@@ -54,6 +54,10 @@ const startActiveEventsUpdater = async () => {
         activeEvents.sort((a, b) => new Date(a.end) - new Date(b.end));
         // Loop app specified guilds
         for (const guildInfo of config.guilds) {
+            // Check if event category id set for guild
+            if (!guildInfo.eventsCategoryId) {
+                continue;
+            }
             // Get guild from id
             const guild = client.guilds.cache.get(guildInfo.id);
             if (!guild) {
