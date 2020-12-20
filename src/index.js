@@ -5,6 +5,7 @@ const path = require('path');
 const Discord = require('discord.js');
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
+const Mustache = require('mustache');
 
 const config = require('./config.json');
 const CommandHandler = require('./handlers/commands.js');
@@ -15,7 +16,7 @@ const UrlWatcher = require('./services/url-watcher.js');
 const utils = require('./services/utils.js');
 
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
-const intervalM = 5 * 60 * 1000;
+const intervalM = 1 * 10 * 1000;
 
 if (config.token) {
     // Load commands in 'commands' folder
@@ -85,10 +86,14 @@ const startActiveEventsUpdater = async () => {
                 // Format event ends date
                 const eventEndDate = event.end ? new Date(event.end) : 'N/A';
                 const ends = eventEndDate !== 'N/A'
-                    ? (eventEndDate.getMonth() + 1) + "-" + eventEndDate.getDate()
+                    ? (eventEndDate.getMonth() + 1) + '-' + eventEndDate.getDate()
                     : eventEndDate;
                 // Get channel name from event name and ends date
-                const channelName = `${ends}-${event.name}`;
+                const channelName = Mustache.render(config.channelNameFormat, {
+                    month: eventEndDate.getMonth() + 1,
+                    day: eventEndDate.getDate(),
+                    name: event.name,
+                });
                 // Check if channel exists already
                 const channelExists = guild.channels.cache.find(x => x.name.toLowerCase() === channelName.toLowerCase());
                 // Channel does not exist
