@@ -15,7 +15,7 @@ const UrlWatcher = require('./services/url-watcher.js');
 const utils = require('./services/utils.js');
 
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
-const intervalM = 15 * 60 * 1000;
+const intervalM = 5 * 60 * 1000;
 
 if (config.token) {
     // Load commands in 'commands' folder
@@ -100,7 +100,7 @@ const startActiveEventsUpdater = async () => {
                 }
             }
         }
-    }, 5 * 60 * 1000);
+    }, intervalM);
 };
 
 UrlWatcher(urlToWatch, intervalM, async () => {
