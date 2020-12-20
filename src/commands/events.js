@@ -51,7 +51,7 @@ module.exports = {
         }
         const channel = getChannelFromMention(message.client, channelId);
         if (!channel) {
-            message.reply({ embed: { description: `Failed to find channel with mention ${mention}`, color: 0xff1100 }});
+            message.reply({ embed: { description: `Failed to find channel with id ${channelId}`, color: 0xff1100 }});
             return;
         }
         if (activeOnly) {
