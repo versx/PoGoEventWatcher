@@ -30,7 +30,7 @@ module.exports = (message) => {
     if (command.args && !args.length) {
         let reply = `You didn't provide any arguments, ${message.author}!`;
         if (command.usage) {
-        	reply += `\nThe proper usage would be: \`${config.prefix}${command.name} ${command.usage}\``;
+            reply += `\nThe proper usage would be: \`${config.prefix}${command.name} ${command.usage}\``;
         }
         return message.channel.send({ embed: { description: reply, color: 0xff1100} });
     }

@@ -3,8 +3,10 @@
 module.exports = {
     name: 'ping',
     aliases: ['p'],
-	description: 'Ping!',
-	execute(message, args) {
-		message.channel.send('Pong.');
-	},
+    description: 'Ping!',
+    /* eslint-disable no-unused-vars */
+    execute(message, args) {
+    /* eslint-enable no-unused-vars */
+        message.channel.send('Pong.');
+    },
 };

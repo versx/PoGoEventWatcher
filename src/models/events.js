@@ -1,5 +1,6 @@
 'use strict';
 
+const locale = require('../services/locale.js');
 const utils = require('../services/utils.js');
 
 class PokemonEvents {
@@ -8,7 +9,7 @@ class PokemonEvents {
      * Returns a list of all events
      */
     static async getAll() {
-        const url = "https://raw.githubusercontent.com/ccev/pogoinfo/info/events/all.json";
+        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/all.json';
         const data = await utils.get(url);
         return data;
     }
@@ -17,7 +18,7 @@ class PokemonEvents {
      * Returns a list of active events
      */
     static async getActive() {
-        const url = "https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json";
+        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
         const data = await utils.get(url);
         return data;
     }
@@ -26,16 +27,16 @@ class PokemonEvents {
      * Returns dictionary of available raid bosses by level
      */
     static async getAvailableRaidBosses() {
-        const url = "https://raw.githubusercontent.com/ccev/pogoinfo/info/raid-bosses.json";
+        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/raid-bosses.json';
         const data = await utils.get(url);
-        return data
+        return data;
     }
 
     /**
      * Returns an array of available nesting Pokemon IDs
      */
     static async getAvailableNestPokemon() {
-        const url = "https://raw.githubusercontent.com/ccev/pogoinfo/info/nests.json";
+        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/nests.json';
         const data = await utils.get(url);
         return data;
     }
@@ -44,7 +45,7 @@ class PokemonEvents {
      * Returns the unix timestamp of the last next migration
      */
     static async getLastNestMigration() {
-        const url = "https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration";
+        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration';
         const data = await utils.get(url);
         return data;
     }
@@ -53,7 +54,7 @@ class PokemonEvents {
      * Returns the active invasion grunt types dictionary
      */
     static async getAvailableGrunts() {
-        const url = "https://raw.githubusercontent.com/ccev/pogoinfo/info/grunts.json";
+        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/grunts.json';
         const data = await utils.get(url);
         return data;
     }
@@ -73,8 +74,8 @@ class PokemonEvents {
             eggs: utils.stripIds(active.details.eggs),
             spawns: utils.stripIds(active.details.spawns),
             raids: Object.keys(active.details.raids)
-                         .map(x => `Level ${x}: ` + utils.stripIds(active.details.raids[x]).map(y => locale.getPokemonName(y))
-                         .join(', ')),
+                .map(x => `Level ${x}: ` + utils.stripIds(active.details.raids[x]).map(y => locale.getPokemonName(y))
+                    .join(', ')),
             nests: await this.getAvailableNestPokemon(),
         };
         return obj;

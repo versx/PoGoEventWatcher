@@ -66,4 +66,15 @@ module.exports = {
     isObject: (object) => {
         return object != null && typeof object === 'object';
     },
-}
+    /**
+     * Get channel id from webhook url response
+     * @param {*} webhookUrl 
+     */
+    getWebhookData: async (webhookUrl) => {
+        const data = await axios.get(webhookUrl);
+        if (data.data) {
+            return data.data;
+        }
+        return null;
+    }
+};

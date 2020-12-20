@@ -11,5 +11,6 @@
         "id": "0000000000000000",
         "eventsCategoryId": "0000000000000000"
     }],
-    "channelNameFormat": "{{month}}-{{day}} {{name}}"
+    "channelNameFormat": "{{month}}-{{day}} {{name}}",
+    "deletePreviousEvents": false
 }

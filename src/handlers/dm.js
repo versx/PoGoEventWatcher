@@ -11,7 +11,7 @@ module.exports = {
         // Send direct message to users
         for (const userId of userIds) {
             const member = client.users.cache.get(userId);
-            await sendDirectMessage(member, { embed: embed });
+            await this.sendDirectMessage(member, { embed: embed });
             console.info(`New event direct message sent to ${member.username} (${member.id})`);
         }
     },
@@ -40,4 +40,4 @@ module.exports = {
             console.error('Failed to send message to user', member, '\nError:', err);
         }
     }
-}
+};

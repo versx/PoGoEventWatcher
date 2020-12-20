@@ -21,7 +21,7 @@ module.exports = {
             avatar_url: pogoIconUrl,
             content: content,
             embeds: [
-                createActiveEventEmbed(event)
+                this.createActiveEventEmbed(event)
             ]
         };
         return payload;
@@ -78,7 +78,7 @@ module.exports = {
                 text: new Date().toLocaleString(),
                 icon_url: pogoIconUrl,
             }
-        }
+        };
         return embed;
     }
 };

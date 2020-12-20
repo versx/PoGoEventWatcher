@@ -3,13 +3,13 @@
 const config = require('../config.json');
 
 module.exports = {
-	name: 'help',
-	description: 'List all of my commands or info about a specific command.',
-	aliases: ['commands', 'h'],
-	usage: '[command name]',
-	//cooldown: 5,
-	execute(message, args) {
-		const data = [];
+    name: 'help',
+    description: 'List all of my commands or info about a specific command.',
+    aliases: ['commands', 'h'],
+    usage: '[command name]',
+    //cooldown: 5,
+    execute(message, args) {
+        const data = [];
         const { commands } = message.client;
 
         if (!args.length) {
@@ -42,5 +42,5 @@ module.exports = {
         
         //data.push(`**Cooldown:** ${command.cooldown || 3} second(s)`);
         message.channel.send({ embed: { title: 'Help', description: data.join('\n'), color: 0x191919 } });
-	},
+    },
 };

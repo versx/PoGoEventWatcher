@@ -34,8 +34,8 @@ module.exports = {
     ownerOnly: true,
     usage: '<#9832798478924> [active]\n\t\t<#9832798478924>',
     args: true,
-	description: 'Post all Pokemon events or provide `active` as an argument for only active events to a specific channel.',
-	async execute(message, args) {
+    description: 'Post all Pokemon events or provide `active` as an argument for only active events to a specific channel.',
+    async execute(message, args) {
         let channelId;
         let activeOnly = false;
         switch (args.length) {
@@ -59,20 +59,20 @@ module.exports = {
         } else {
             await postAllEvents(message, channel);
         }
-	},
+    },
 };
 
 const getChannelFromMention = (client, mention) => {
-	// The id is the first and only match found by the RegEx.
-	const matches = mention.match(/^<#?(\d+)>$/);
+    // The id is the first and only match found by the RegEx.
+    const matches = mention.match(/^<#?(\d+)>$/);
 
-	// If supplied variable was not a mention, matches will be null instead of an array.
-	if (!matches) return;
+    // If supplied variable was not a mention, matches will be null instead of an array.
+    if (!matches) return;
 
-	// However the first element in the matches array will be the entire mention, not just the ID,
-	// so use index 1.
-	const id = matches[1];
-	return client.channels.cache.get(id);
+    // However the first element in the matches array will be the entire mention, not just the ID,
+    // so use index 1.
+    const id = matches[1];
+    return client.channels.cache.get(id);
 };
 
 const postAllEvents = async (message, channel = null) => {

@@ -17,6 +17,7 @@ const utils = require('./services/utils.js');
 
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
 const intervalM = 5 * 60 * 1000;
+const NotAvailable = 'N/A';
 
 if (config.token) {
     // Load commands in 'commands' folder
@@ -84,14 +85,11 @@ const startActiveEventsUpdater = async () => {
             // Loop all active events
             for (const event of activeEvents) {
                 // Format event ends date
-                const eventEndDate = event.end ? new Date(event.end) : 'N/A';
-                const ends = eventEndDate !== 'N/A'
-                    ? (eventEndDate.getMonth() + 1) + '-' + eventEndDate.getDate()
-                    : eventEndDate;
+                const eventEndDate = event.end ? new Date(event.end) : NotAvailable;
                 // Get channel name from event name and ends date
                 const channelName = Mustache.render(config.channelNameFormat, {
-                    month: eventEndDate.getMonth() + 1,
-                    day: eventEndDate.getDate(),
+                    month: eventEndDate !== NotAvailable ? eventEndDate.getMonth() + 1 : NotAvailable,
+                    day: eventEndDate !== NotAvailable ? eventEndDate.getDate() : '',
                     name: event.name,
                 });
                 // Check if channel exists already
@@ -118,6 +116,16 @@ UrlWatcher(urlToWatch, intervalM, async () => {
     // Send webhook notifications
     if (config.webhooks && config.webhooks.length > 0) {
         for (const webhook of config.webhooks) {
+            const whData = utils.getWebhookData(webhook);
+            if (whData) {
+                const guild = client.guilds.cache.get(whData.guild_id);
+                if (guild) {
+                    const channel = guild.channels.cache.get(whData.channel_id);
+                    if (channel) {
+                        await channel.bulkDelete(100);
+                    }
+                }
+            }
             await utils.post(webhook, payload);
         }
     }
