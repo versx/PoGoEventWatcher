@@ -28,7 +28,7 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
     "botChannelIds": ["0000000000000000"],
     // Owner Discord Id for owner only commands
     "ownerId": "0000000000000000",
-    // List Discord user ids to send event changes to
+    // List of Discord user ids to send event changes to
     "userIds": ["0000000000000000"],
     // Discord user/role mention string for event changes embed
     "mention": "@0000000000000000",
