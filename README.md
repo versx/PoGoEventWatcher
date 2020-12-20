@@ -3,7 +3,8 @@
 Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new event information.  
 
 ## Features
-- Discord channel webhook upon new event data found (also DM).
+- Supports multiple Discord servers.  
+- Discord channel webhook upon new event data found (also DM).  
 - Discord commands to post all or only active events to a channel.  
 
 ## Installation  
@@ -58,4 +59,5 @@ Examples:
 ```
 
 ## Previews  
-![Webhook Example](examples/webhook.png)
+![Webhook Example](examples/webhook.png)  
+![Voice Channels Example](examples/channels.png)  
