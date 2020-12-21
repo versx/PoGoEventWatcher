@@ -44,6 +44,14 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 }
 ```
 
+## Discord Bot Permissions  
+Event Voice Channels Category
+- Manage Channel
+- Manage Permissions
+
+Posting Events  
+- Send Messages
+
 ## Commands
 - Name: `events`  
 - Description: `Send all events or only active events to a specific channel.`
