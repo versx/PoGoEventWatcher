@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const appLocalesFolder = path.resolve(__dirname, '../static/locales');
+const appLocalesFolder = path.resolve(__dirname, '../../static/locales');
 const pogoLocalesFolder = path.resolve(__dirname, '../node_modules/pogo-translations/static/locales');
 
 fs.readdir(appLocalesFolder, (err, files) => {
