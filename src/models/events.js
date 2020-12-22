@@ -80,6 +80,25 @@ class PokemonEvents {
         };
         return obj;
     }
+
+    static async getActive(sorted = true) {
+        // Get all events
+        const allEvents = await PokemonEvents.getAll();
+        // Now timestamp in seconds
+        const now = new Date() / 1000;
+        // Filter for only active evnets within todays date
+        const activeEvents = allEvents.filter(x => new Date(x.start) / 1000 < now && now < new Date(x.end) / 1000);
+        // Check if no active events available
+        if (activeEvents.length === 0) {
+            // No active events
+            return null;
+        }
+        if (sorted) {
+            // Sort active events by end date
+            activeEvents.sort((a, b) => new Date(a.end) - new Date(b.end));
+        }
+        return activeEvents;
+    }
 }
 
 module.exports = PokemonEvents;
