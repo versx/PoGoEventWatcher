@@ -15,10 +15,11 @@ const PokemonEvents = require('./models/events.js');
 const UrlWatcher = require('./services/url-watcher.js');
 const utils = require('./services/utils.js');
 
-const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
+const urlToWatch = 'https://ver.sx/x/active.json';//'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
 const intervalM = 5 * 60 * 1000;
 const NotAvailable = 'N/A';
 
+// Discord initialization
 if (config.token) {
     // Load commands in 'commands' folder
     const commandsFolder = path.resolve(__dirname, './commands');
@@ -39,16 +40,21 @@ if (config.token) {
 
 let started = false;
 const startActiveEventsUpdater = async () => {
-    // Prevent multiple
-    if (started) return;
-    setInterval(async () => {
-        started = true;
+    const createChannels = async () => {
         // Get all active events
         const activeEvents = await PokemonEvents.getActive(true);
         // Loop all specified guilds
         for (const guildInfo of config.guilds) {
             createVoiceChannels(guildInfo, activeEvents);
         }
+    };
+    // Prevent multiple
+    if (started) return;
+    await createChannels();
+
+    setInterval(async () => {
+        started = true;
+        await createChannels();
     }, intervalM);
 };
 
