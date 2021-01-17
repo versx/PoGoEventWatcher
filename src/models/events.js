@@ -3,13 +3,15 @@
 const locale = require('../services/locale.js');
 const utils = require('../services/utils.js');
 
+const baseUrl = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/';
+
 class PokemonEvents {
 
     /**
      * Returns a list of all events
      */
     static async getAll() {
-        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/all.json';
+        const url = baseUrl + 'events/all.json';
         const data = await utils.get(url);
         return data;
     }
@@ -18,7 +20,7 @@ class PokemonEvents {
      * Returns a list of active events
      */
     static async getActive() {
-        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
+        const url = baseUrl + 'events/active.json';
         const data = await utils.get(url);
         return data;
     }
@@ -27,7 +29,7 @@ class PokemonEvents {
      * Returns dictionary of available raid bosses by level
      */
     static async getAvailableRaidBosses() {
-        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/raid-bosses.json';
+        const url = baseUrl + 'raid-bosses.json';
         const data = await utils.get(url);
         return data;
     }
@@ -36,7 +38,7 @@ class PokemonEvents {
      * Returns an array of available nesting Pokemon IDs
      */
     static async getAvailableNestPokemon() {
-        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/nests.json';
+        const url = baseUrl + 'info/nests.json';
         const data = await utils.get(url);
         return data;
     }
@@ -45,7 +47,7 @@ class PokemonEvents {
      * Returns the unix timestamp of the last next migration
      */
     static async getLastNestMigration() {
-        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration';
+        const url = baseUrl + 'last-nest-migration';
         const data = await utils.get(url);
         return data;
     }
@@ -54,7 +56,7 @@ class PokemonEvents {
      * Returns the active invasion grunt types dictionary
      */
     static async getAvailableGrunts() {
-        const url = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/grunts.json';
+        const url = baseUrl + 'grunts.json';
         const data = await utils.get(url);
         return data;
     }
