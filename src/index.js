@@ -16,7 +16,7 @@ const UrlWatcher = require('./services/url-watcher.js');
 const utils = require('./services/utils.js');
 
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
-const intervalM = 5 * 60 * 1000;
+const intervalM = 1 * 10 * 1000;
 const NotAvailable = 'N/A';
 const existingEventChannels = {};
 let started = false;
