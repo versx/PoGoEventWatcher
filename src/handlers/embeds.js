@@ -21,7 +21,7 @@ module.exports = {
             avatar_url: pogoIconUrl,
             content: content,
             embeds: [
-                this.createActiveEventEmbed(event)
+                module.exports.createActiveEventEmbed(event)
             ]
         };
         return payload;

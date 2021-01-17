@@ -70,7 +70,7 @@ class PokemonEvents {
             start: active.start ? new Date(active.start).toLocaleString() : null,
             end: new Date(active.end).toLocaleString(),
             lastNestMigration: new Date(lastNestMigrationTimestamp * 1000).toLocaleString(),
-            bonuses: active.details.bonuses.join('\n- '),
+            bonuses: (active.details.bonuses || []).join('\n- '),
             eggs: utils.stripIds(active.details.eggs),
             spawns: utils.stripIds(active.details.spawns),
             raids: Object.keys(active.details.raids)
@@ -81,7 +81,7 @@ class PokemonEvents {
         return obj;
     }
 
-    static async getActive(sorted = true) {
+    static async getActiveEvents(sorted = true) {
         // Get all events
         const allEvents = await PokemonEvents.getAll();
         // Now timestamp in seconds

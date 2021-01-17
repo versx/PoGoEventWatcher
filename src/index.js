@@ -9,15 +9,18 @@ const Mustache = require('mustache');
 
 const config = require('./config.json');
 const CommandHandler = require('./handlers/commands.js');
-const DmHandler = require('./handlers/dm.js');
+const sendDirectMessage = require('./handlers/dm.js');
 const EmbedHandler = require('./handlers/embeds.js');
 const PokemonEvents = require('./models/events.js');
 const UrlWatcher = require('./services/url-watcher.js');
 const utils = require('./services/utils.js');
 
-const urlToWatch = 'https://ver.sx/x/active.json';//'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
+const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
 const intervalM = 5 * 60 * 1000;
 const NotAvailable = 'N/A';
+
+// TODO: Delete expired event voice channels
+// TODO: Show time when event expires that day
 
 // Discord initialization
 if (config.token) {
@@ -42,7 +45,7 @@ let started = false;
 const startActiveEventsUpdater = async () => {
     const createChannels = async () => {
         // Get all active events
-        const activeEvents = await PokemonEvents.getActive(true);
+        const activeEvents = await PokemonEvents.getActiveEvents(true);
         // Loop all specified guilds
         for (const guildInfo of config.guilds) {
             createVoiceChannels(guildInfo, activeEvents);
@@ -115,7 +118,7 @@ const createVoiceChannel = async (guild, channelName, channelCategory, permissio
 };
 
 UrlWatcher(urlToWatch, intervalM, async () => {
-    const event = await PokemonEvents.buildEventObject();
+    const event = await PokemonEvents.buildActiveEvent();
     const payload = EmbedHandler.createEmbedFromNewEvent(event);
     // Send webhook notifications
     if (config.webhooks && config.webhooks.length > 0) {
@@ -138,8 +141,12 @@ UrlWatcher(urlToWatch, intervalM, async () => {
     }
     // If bot token set we're logged into Discord bot
     if (config.token) {
-        // Send direct message to users
         const embed = EmbedHandler.createActiveEventEmbed(event);
-        await DmHandler.sendDirectMessages(client, config.userIds, embed);
+        // Send direct message to users
+        for (const userId of config.userIds) {
+            const member = client.users.cache.get(userId);
+            await sendDirectMessage(member, { embed: embed });
+            console.info(`New event direct message sent to ${member.username} (${member.id})`);
+        }
     }
 });

@@ -22,7 +22,7 @@ module.exports = {
      */
     post: async (url, data) => {
         const req = await axios.post(url, data);
-        if (req.status !== 200) {
+        if (req.status !== 200 && req.statusText !== 'No Content') {
             console.error(`Failed to post data to ${url}:`, req.statusText);
             return null;
         }
