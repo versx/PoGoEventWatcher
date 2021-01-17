@@ -18,8 +18,9 @@ const utils = require('./services/utils.js');
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
 const intervalM = 5 * 60 * 1000;
 const NotAvailable = 'N/A';
+const existingEventChannels = {};
+let started = false;
 
-// TODO: Delete expired event voice channels
 // TODO: Show time when event expires that day
 
 // Discord initialization
@@ -36,24 +37,24 @@ if (config.token) {
         console.log(`Logged in as ${client.user.tag}!`);
         // Once the bot is ready we can start updating the voice channels
         await startActiveEventsUpdater();
+        // Create channels as soon as Discord guild is available
+        await createChannels();
     });
     client.on('message', CommandHandler);
     client.login(config.token);
 }
 
-let started = false;
 const startActiveEventsUpdater = async () => {
     const createChannels = async () => {
         // Get all active events
         const activeEvents = await PokemonEvents.getActiveEvents(true);
         // Loop all specified guilds
         for (const guildInfo of config.guilds) {
-            createVoiceChannels(guildInfo, activeEvents);
+            await createVoiceChannels(guildInfo, activeEvents);
         }
     };
     // Prevent multiple
     if (started) return;
-    await createChannels();
 
     setInterval(async () => {
         started = true;
@@ -85,9 +86,10 @@ const createVoiceChannels = async (guildInfo, activeEvents) => {
         console.error(`Failed to get channel category by id ${guildInfo.eventsCategoryId} from guild ${guildInfo.id}`);
         return;
     }
-    // TODO: Account for ezpired event channels
     // Update permissions for event category channel
     await channelCategory.updateOverwrite(everyoneRole, permissions);
+
+    const now = new Date();
     // Loop all active events
     for (const event of activeEvents) {
         // Format event ends date
@@ -98,23 +100,41 @@ const createVoiceChannels = async (guildInfo, activeEvents) => {
             day: eventEndDate !== NotAvailable ? eventEndDate.getDate() : '',
             name: event.name,
         });
-        createVoiceChannel(guild, channelName, channelCategory, permissions);
+        const channel = await createVoiceChannel(guild, channelName, channelCategory, permissions);
+        existingEventChannels[channel.id] = event;
+
+        // Check for expired event channels via `existingEventChannels`
+        if (eventEndDate !== NotAvailable) {
+            if (eventEndDate <= now) {
+                // TODO: Delete channel
+                await deleteChannel(guild, channel);
+            }
+        }
     }
 };
 
 const createVoiceChannel = async (guild, channelName, channelCategory, permissions) => {
-    const channelExists = guild.channels.cache.find(x => x.name.toLowerCase() === channelName.toLowerCase());
-    // Check if channel exists already
-    if (channelExists)
-        return;
+    let channel = guild.channels.cache.find(x => x.name.toLowerCase() === channelName.toLowerCase());
+    // Check if channel does not exist
+    if (!channel) {
+        // Create voice channel with permissions
+        channel = await guild.channels.create(channelName, {
+            type: 'voice',
+            parent: channelCategory,
+            permissionOverwrites: permissions,
+        });
+        console.info('Event voice channel', channel.name, 'created');
+    }
+    return channel;
+};
 
-    // Create voice channel with permissions
-    const newChannel = await guild.channels.create(channelName, {
-        type: 'voice',
-        parent: channelCategory,
-        permissionOverwrites: permissions,
-    });
-    console.info('Event voice channel', newChannel.name, 'created');
+const deleteChannel = async (guild, channelId) => {
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel) {
+        console.error(`Failed to find expired event channel ${channelId} to delete.`);
+        return;
+    }
+    await channel.delete();
 };
 
 UrlWatcher(urlToWatch, intervalM, async () => {
