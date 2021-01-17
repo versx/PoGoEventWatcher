@@ -26,7 +26,7 @@ module.exports = (message) => {
         return;
 
     // Check if owner only command
-    if (command.ownerOnly && message.author.id !== config.ownerId)
+    if (command.ownerOnly && !config.ownerIds.includes(message.author.id))
         return message.reply({ embed: { description: ':x: **Access Not Granted** You do not have permission to execute this command.', color: 0xff1100 }});
 
     // Check if guild only command that does not support DMs
