@@ -44,15 +44,17 @@ if (config.token) {
     client.login(config.token);
 }
 
+const createChannels = async () => {
+    // Get all active events
+    const activeEvents = await PokemonEvents.getActiveEvents(true);
+    // Loop all specified guilds
+    for (const guildInfo of config.guilds) {
+        await createVoiceChannels(guildInfo, activeEvents);
+    }
+};
+
 const startActiveEventsUpdater = async () => {
-    const createChannels = async () => {
-        // Get all active events
-        const activeEvents = await PokemonEvents.getActiveEvents(true);
-        // Loop all specified guilds
-        for (const guildInfo of config.guilds) {
-            await createVoiceChannels(guildInfo, activeEvents);
-        }
-    };
+
     // Prevent multiple
     if (started) return;
 
