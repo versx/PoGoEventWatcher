@@ -19,7 +19,7 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 
 ## Configuration
 
-```json
+```js
 {
   // Locale translations for Pokemon names
   "locale": "en",
