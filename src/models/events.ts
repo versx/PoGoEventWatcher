@@ -2,7 +2,7 @@
 
 import { getPokemonName } from '../services/locale';
 import { get, stripIds, } from '../services/utils';
-import { ActiveEvent, ActiveRaidsDictionary, PastEvent } from '../types/events';
+import { ActiveEvent, ActiveRaidsDictionary } from '../types/events';
 
 //const baseUrl = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/';
 const baseUrl = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/';
@@ -14,17 +14,17 @@ export class PokemonEvents {
     /**
      * Returns a list of all events
      */
-    public static async getAll(active: boolean = false, sorted: boolean = false): Promise<PastEvent[]> {
-        const url = baseUrl + 'events/all.json';
+    public static async getAll(active: boolean = false, sorted: boolean = false): Promise<ActiveEvent[]> {
+        const url = baseUrl + 'active/events.json';
         const data = await get(url);
-        const events = <PastEvent[]>data;
+        const events = <ActiveEvent[]>data;
         if (!active) {
             return events;
         }
         // Now timestamp in seconds
         const now = new Date().getTime() / 1000;
         // Filter for only active evnets within todays date
-        const activeEvents = events.filter((event: PastEvent) => new Date(event.start).getTime() / 1000 < now && now < new Date(event.end).getTime() / 1000);
+        const activeEvents = events.filter((event: ActiveEvent) => new Date(event.start).getTime() / 1000 < now && now < new Date(event.end).getTime() / 1000);
         // Check if no active events available
         if (activeEvents.length === 0) {
             // No active events
@@ -32,19 +32,9 @@ export class PokemonEvents {
         }
         if (sorted) {
             // Sort active events by end date
-            activeEvents.sort((a: PastEvent, b: PastEvent) => new Date(a.end).getTime() - new Date(b.end).getTime());
+            activeEvents.sort((a: ActiveEvent, b: ActiveEvent) => new Date(a.end).getTime() - new Date(b.end).getTime());
         }
         return activeEvents;
-    }
-
-    /**
-     * Returns a list of active events
-     */
-    public static async getActive(): Promise<ActiveEvent[]> {
-        const url = baseUrl + 'active/events.json';
-        const data = await get(url);
-        console.log('data active:', data);
-        return <ActiveEvent[]>data;
     }
 
     /**

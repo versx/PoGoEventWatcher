@@ -1,12 +1,5 @@
 'use strict';
 
-export interface PastEvent {
-    name: string;
-    type: string;
-    start: string;
-    end: string;
-}
-
 export interface ActiveEvent {
     name: string;
     type: string;
