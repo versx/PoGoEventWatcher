@@ -8,9 +8,8 @@ export interface ActiveEvent {
     spawns: EventSpawn[];
     eggs: EventRaid[];
     shinies: EventShiny[];
-    nests: string;
-    bonuses: string[];
-    features: any[];
+    bonuses: EventBonus[];
+    features: string[];
     has_quests: boolean;
     has_spawnpoints: boolean;
 }
@@ -61,6 +60,12 @@ export interface ActiveInvasionGrunt {
     active: boolean;
     character: InvasionCharacter;
     lineup: { rewards: number[], team: Array<InvasionLineup[]> };
+}
+
+export interface EventBonus {
+    text: string;
+    template: string;
+    value: string;
 }
 
 

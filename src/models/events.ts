@@ -4,7 +4,6 @@ import { getPokemonName } from '../services/locale';
 import { get, stripIds, } from '../services/utils';
 import { ActiveEvent, ActiveRaidsDictionary } from '../types/events';
 
-//const baseUrl = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/';
 const baseUrl = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/';
 
 // TODO: Create reusable generics method
@@ -81,28 +80,4 @@ export class PokemonEvents {
         const data = await get(url);
         return data;
     }
-
-    /**
-     * Build event object from active events endpoint
-     */
-    /*
-    public static async buildActiveEvent(): Promise<any> {
-        const active = await this.getActive();
-        console.log('active:', active);
-        const lastNestMigrationTimestamp = await this.getLastNestMigration();
-        const obj = {
-            name: active.name,
-            start: active.start ? new Date(active.start).toLocaleString() : null,
-            end: new Date(active.end).toLocaleString(),
-            lastNestMigration: new Date(lastNestMigrationTimestamp * 1000).toLocaleString(),
-            bonuses: (active.bonuses || []).join('\n- '),
-            spawns: active.spawns.map(x => x.id),
-            raids: Object.keys(active.eggs)
-                .map(lvl => `Level ${lvl}: ` + active.eggs[lvl].map(x => getPokemonName(x))
-                    .join(', ')),
-            nests: await this.getAvailableNestPokemon(),
-        };
-        return obj;
-    }
-    */
 }
