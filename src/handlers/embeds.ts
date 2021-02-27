@@ -35,7 +35,6 @@ export const createEmbedFromNewEvent = async (event: ActiveEvent) => {
  */
 export const createActiveEventEmbed = async (event: ActiveEvent) => {
     // TODO: Get nests
-    // TODO: Get raids
     const raids = await PokemonEvents.getAvailableRaidBosses();
     const availableRaids = Object.keys(raids)
                                  .map(x => `Level ${x}: ` + raids[x].map(y => getPokemonName(y.id))
@@ -46,6 +45,10 @@ export const createActiveEventEmbed = async (event: ActiveEvent) => {
         description += `**Starts:** ${event.start}\n`;
     }
     description += `**Ends:** ${event.end}\n`;
+    const spawns = event.spawns || [];
+    const eggs = event.eggs || [];
+    const bonuses = event.bonuses || [];
+    const features = event.features || [];
     const embed = {
         title: embedSettings.title,
         //url: "",
@@ -53,11 +56,15 @@ export const createActiveEventEmbed = async (event: ActiveEvent) => {
         color: 0x0099ff,
         fields: [{
             name: 'Event Bonuses',
-            value: `- ${(event.bonuses.map((x: EventBonus) => x.text) || []).join('\n- ')}`,
+            value: bonuses.length === 0
+                ? `- ${(bonuses.map((x: EventBonus) => x.text) || []).join('\n- ')}`
+                : 'N/A',
             inline: false,
         },{
             name: 'Event Features',
-            value: `- ${(event.features || []).join('\n- ')}`,
+            value: features.length === 0
+                ? 'N/A'
+                : `- ${(features).join('\n- ')}`,
             inline: false,
         },{
             name: 'Last Nest Migration',
@@ -69,21 +76,27 @@ export const createActiveEventEmbed = async (event: ActiveEvent) => {
             inline: false,
         },*/{
             name: 'Event Pokemon Spawns',
-            value: event.spawns.map((x: EventSpawn) => x.id)
-                               .sort((a: number, b: number) => a - b)
-                               .map((x: number) => getPokemonName(x))
-                               .join(', '),
+            value: spawns.length === 0
+                ? spawns.map((x: EventSpawn) => x.id)
+                        .sort((a: number, b: number) => a - b)
+                        .map((x: number) => getPokemonName(x))
+                        .join(', ')
+                : 'N/A',
             inline: true,
         },{
             name: 'Event Hatchable Eggs',
-            value: event.eggs.map(x => x.id)
-                             .sort((a: number, b: number) => a - b)
-                             .map((x: number) => getPokemonName(x))
-                             .join(', '),
+            value: eggs.length === 0
+                ? eggs.map(x => x.id)
+                      .sort((a: number, b: number) => a - b)
+                      .map((x: number) => getPokemonName(x))
+                      .join(', ')
+                : 'N/A',
             inline: true,
         },{
             name: 'Event Raids',
-            value: availableRaids.join('\n'),
+            value: availableRaids.length === 0
+                ? availableRaids.join('\n')
+                : 'N/A',
             inline: false,
         }],
         /*
