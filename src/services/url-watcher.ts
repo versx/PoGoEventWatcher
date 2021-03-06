@@ -1,10 +1,12 @@
 'use strict';
 
+import { NoParamCallback } from 'fs';
+
 const utils = require('../services/utils.js');
 
-let previousData;
+let previousData: any;
 
-module.exports = (urlToWatch, interval, changedCallback) => {
+export const UrlWatcher = (urlToWatch: string, interval: number, changedCallback: NoParamCallback) => {
     /**
      * Start checking for url address content changes
      */
@@ -16,7 +18,7 @@ module.exports = (urlToWatch, interval, changedCallback) => {
         }
         if (!utils.deepEqual(previousData, data)) {
             previousData = data;
-            changedCallback();
+            changedCallback(null);
         }
     }, interval);
-};
+}

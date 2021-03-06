@@ -1,11 +1,13 @@
 'use strict';
 
+import { User } from 'discord.js';
+
 /**
  * Send Discord direct message to member
  * @param {*} member 
  * @param {*} data 
  */
-module.exports = async (member, data) => {
+export const sendDm = async (member: User, data: any): Promise<void> => {
     if (!member || !data) {
         console.warn('Member or data is null, cannot send direct message');
         return;
@@ -24,4 +26,4 @@ module.exports = async (member, data) => {
     } catch (err) {
         console.error('Failed to send message to user', member, '\nError:', err);
     }
-};
+}

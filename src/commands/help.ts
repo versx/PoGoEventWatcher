@@ -1,20 +1,22 @@
 'use strict';
 
-const config = require('../config.json');
+import { Message } from 'discord.js';
+import { commands } from '../handlers/commands';
 
-module.exports = {
+const config = require('../../src/config.json');
+
+export = {
     name: 'help',
     description: 'List all of my commands or info about a specific command.',
     aliases: ['commands', 'h'],
     usage: '[command name]',
     //cooldown: 5,
-    execute(message, args) {
+    execute(message: Message, args: string[]) {
         const data = [];
-        const { commands } = message.client;
 
         if (!args.length) {
             data.push('List of all available commands:');
-            data.push(commands.map(command => command.name).join(', '));
+            data.push(Object.keys(commands).join(', '));
             data.push(`\nType \`${config.prefix}help [command name]\` to get info on a specific command.`);
             
             return message.author.send({ embed: { title: 'Help', description: data.join('\n'), color: 0x191919 } })
@@ -22,7 +24,7 @@ module.exports = {
                     if (message.channel.type === 'dm') return;
                     message.reply(`Help message sent to ${message.author.tag} via DM of all available commands.`);
                 })
-                .catch(error => {
+                .catch((error: any) => {
                     console.error(`Could not send help DM to ${message.author.tag}.\n`, error);
                     message.reply('It seems like I can\'t DM you! Do you have DMs disabled?');
                 });
