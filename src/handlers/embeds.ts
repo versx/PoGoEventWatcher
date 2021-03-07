@@ -3,7 +3,7 @@
 const config = require('../../src/config.json');
 import { PokemonEvents } from '../models/events';
 import { getPokemonName } from '../services/locale';
-import { get, stripIds, } from '../services/utils';
+import { cropText } from '../services/utils';
 import { ActiveEvent, EventBonus, EventSpawn } from '../types/events';
 
 const pogoIconUrl = 'https://www.creativefreedom.co.uk/wp-content/uploads/2016/07/pokemon1.png';
@@ -17,7 +17,7 @@ const embedSettings = {
  * @param {*} event 
  */
 export const createEmbedFromNewEvent = async (event: ActiveEvent) => {
-    let content = config.mention ? `<${config.mention}>` : null;
+    const content = config.mention ? `<${config.mention}>` : null;
     const payload = {
         username: embedSettings.username,
         avatar_url: pogoIconUrl,
@@ -26,8 +26,9 @@ export const createEmbedFromNewEvent = async (event: ActiveEvent) => {
             await createActiveEventEmbed(event)
         ]
     };
+
     return payload;
-}
+};
 
 /**
  * Create Discord embed from event object
@@ -36,9 +37,7 @@ export const createEmbedFromNewEvent = async (event: ActiveEvent) => {
 export const createActiveEventEmbed = async (event: ActiveEvent) => {
     // TODO: Get nests
     const raids = await PokemonEvents.getAvailableRaidBosses();
-    const availableRaids = Object.keys(raids)
-                                 .map(x => `Level ${x}: ` + raids[x].map(y => getPokemonName(y.id))
-                                 .join(', '));
+    const availableRaids = Object.keys(raids).map(x => `Level ${x}: ` + raids[x].map(y => getPokemonName(y.id)).join(', '));
     //const availableNests = await PokemonEvents.getAvailableNestPokemon();
     let description = `**Name:** ${event.name}\n`;
     if (event.start) {
@@ -57,8 +56,8 @@ export const createActiveEventEmbed = async (event: ActiveEvent) => {
         fields: [{
             name: 'Event Bonuses',
             value: bonuses.length === 0
-                ? `- ${(bonuses.map((x: EventBonus) => x.text) || []).join('\n- ')}`
-                : 'N/A',
+                ? 'N/A'
+                : `- ${(bonuses.map((x: EventBonus) => x.text) || []).join('\n- ')}`,
             inline: false,
         },{
             name: 'Event Features',
@@ -77,26 +76,26 @@ export const createActiveEventEmbed = async (event: ActiveEvent) => {
         },*/{
             name: 'Event Pokemon Spawns',
             value: spawns.length === 0
-                ? spawns.map((x: EventSpawn) => x.id)
-                        .sort((a: number, b: number) => a - b)
-                        .map((x: number) => getPokemonName(x))
-                        .join(', ')
-                : 'N/A',
+                ? 'N/A'
+                : spawns.map((x: EventSpawn) => x.id)
+                    .sort((a: number, b: number) => a - b)
+                    .map((x: number) => getPokemonName(x))
+                    .join(', '),
             inline: true,
         },{
             name: 'Event Hatchable Eggs',
             value: eggs.length === 0
-                ? eggs.map(x => x.id)
-                      .sort((a: number, b: number) => a - b)
-                      .map((x: number) => getPokemonName(x))
-                      .join(', ')
-                : 'N/A',
+                ? 'N/A'
+                : eggs.map(x => x.id)
+                    .sort((a: number, b: number) => a - b)
+                    .map((x: number) => getPokemonName(x))
+                    .join(', '),
             inline: true,
         },{
             name: 'Event Raids',
             value: availableRaids.length === 0
-                ? availableRaids.join('\n')
-                : 'N/A',
+                ? 'N/A'
+                : availableRaids.join('\n'),
             inline: false,
         }],
         /*
@@ -112,5 +111,10 @@ export const createActiveEventEmbed = async (event: ActiveEvent) => {
             icon_url: pogoIconUrl,
         }
     };
+
+    embed.fields = embed.fields.map(field =>
+        field.value.length > 1024 ? { ...field, value: cropText(field.value, 1024) } : field
+    );
+
     return embed;
-}
+};

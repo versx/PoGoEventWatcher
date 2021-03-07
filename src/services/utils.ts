@@ -13,7 +13,7 @@ export const get = async <T>(url: string): Promise<T | null> => {
         return null;
     }
     return <T>req.data;
-}
+};
 
 /**
  * HTTP POST request to url with data
@@ -36,7 +36,17 @@ export const post = async <T>(url: string, data: any): Promise<T | null> => {
         return null;
     }
     return <T>req.data;
-}
+};
+
+/**
+ * Crop given text to the specified max length when needed
+ *
+ * @param text
+ * @param maxLength
+ */
+export const cropText = (text: string, maxLength: number): string => {
+    return (text.length > maxLength) ? text.substr(0, maxLength - 3) + '...' : text;
+};
 
 /**
  * Strip PMSF icon format for raw ids
@@ -44,7 +54,7 @@ export const post = async <T>(url: string, data: any): Promise<T | null> => {
  */
 export const stripIds = (ids: string[]): number[] => {
     return ids.map(x => parseInt(x.replace('_00', '')));
-}
+};
 
 /**
  * Deep equals between two objects
@@ -69,7 +79,7 @@ export const deepEqual = (object1: any, object2: any): any => {
         }
     }
     return true;
-}
+};
 
 /**
  * Is object an object
@@ -77,7 +87,7 @@ export const deepEqual = (object1: any, object2: any): any => {
  */
 export const isObject = (object: object): boolean => {
     return object != null && typeof object === 'object';
-}
+};
 
 /**
  * Get channel id from webhook url response
@@ -90,7 +100,7 @@ export const getWebhookData = async (webhookUrl: string): Promise<WebhookData | 
         return data.data;
     }
     return null;
-}
+};
 
 interface WebhookData {
     type: number;
