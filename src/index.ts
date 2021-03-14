@@ -153,7 +153,7 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
 UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
     const activeEvents = await PokemonEvents.getAll(true, true);
     for (const event of activeEvents) {
-        const payload = createEmbedFromNewEvent(event);
+        const payload = await createEmbedFromNewEvent(event);
         // Send webhook notifications
         if (config.webhooks && config.webhooks.length > 0) {
             for (const webhook of config.webhooks) {
@@ -179,7 +179,7 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
         }
         // If bot token set we're logged into Discord bot
         if (config.token) {
-            const embed = createActiveEventEmbed(event);
+            const embed = await createActiveEventEmbed(event);
             // Send direct message to users
             for (const userId of config.userIds) {
                 const member = client.users.cache.get(userId);
