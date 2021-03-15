@@ -5,12 +5,12 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "tsc && node ./dist/index.js",
-    "start2": "tsc && node ./dist/index.js",
     "start:watch": "nodemon",
     "start:production": "cd dist && node -r ts-node/register src/index.js",
     "build": "tsc -p tsconfig.json",
     "test": "npx eslint src/**/*.ts",
-    "test-fix": "npx eslint src/**/*.ts --fix"
+    "test-fix": "npx eslint src/**/*.ts --fix",
+    "create-locales": "npm run build && node ./dist/services/create-locales.js"
   },
   "repository": {
     "type": "git",
