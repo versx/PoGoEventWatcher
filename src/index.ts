@@ -151,7 +151,7 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
 };
 
 UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
-    const activeEvents = await PokemonEvents.getAll(true, true);
+    const activeEvents = await PokemonEvents.getAll(false, true);
     for (const event of activeEvents) {
         const payload = await createEmbedFromNewEvent(event);
         // Send webhook notifications
