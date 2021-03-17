@@ -23,7 +23,7 @@ export class PokemonEvents {
         // Now timestamp in seconds
         const now = new Date().getTime() / 1000;
         // Filter for only active evnets within todays date
-        const activeEvents = events.filter((event: ActiveEvent) => new Date(event.start).getTime() / 1000 < now && now < new Date(event.end).getTime() / 1000);
+        const activeEvents = events.filter((event: ActiveEvent) => new Date(event.start).getTime() / 1000 <= now && now < new Date(event.end).getTime() / 1000);
         // Check if no active events available
         if (activeEvents.length === 0) {
             // No active events
