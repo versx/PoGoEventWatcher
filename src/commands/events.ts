@@ -81,7 +81,7 @@ const postEvents = async (message: Message, channel: TextChannel | null = null, 
     const now = new Date().getTime() / 1000;
     if (activeOnly)
     {
-        allEvents = allEvents.filter((x: any) => new Date(x.start).getTime() / 1000 < now && now < new Date(x.end).getTime() / 1000);
+        allEvents = allEvents.filter((x: any) => new Date(x.start).getTime() / 1000 <= now && now < new Date(x.end).getTime() / 1000);
     }
     for (let event of allEvents) {
         const embed = await createActiveEventEmbed(event);
