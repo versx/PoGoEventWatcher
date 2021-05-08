@@ -130,6 +130,9 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
         console.error(`Failed to find expired event channel ${channelId} to delete.`);
         return;
     }
+    if (channel.isText()) {
+        return;
+    }
     try {
         await channel.delete();
     } catch (e) {
