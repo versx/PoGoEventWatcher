@@ -174,12 +174,11 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
             for (const webhook of config.webhooks) {
                 // Delete previous event messages if set
                 if (config.deletePreviousEvents) {
-                    const whData = await getWebhookData(webhook);
-                    if (whData != null) {
-                        const guild = client.guilds.cache.get(whData.guild_id);
-                        if (guild) {
-                            const channel = guild.channels.cache.get(whData.channel_id);
-                            if (channel) {
+                    getWebhookData(webhook)?.then(whData => {
+                        if (whData?.guild_id && whData?.channel_id) {
+                            const guild = client.guilds.cache.get(whData.guild_id);
+                            if (guild) {
+                                const channel = guild.channels.cache.get(whData.channel_id);
                                 try {
                                     (channel as TextChannel).bulkDelete(100);
                                 } catch (err) {
@@ -187,7 +186,9 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
                                 }
                             }
                         }
-                    }
+                    }).catch(err => {
+                        console.error(`Failed to get webhook data for ${webhook}: ${err}`);
+                    });
                 }
                 await post(<string>webhook, payload);
             }
