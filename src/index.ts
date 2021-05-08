@@ -2,7 +2,7 @@
 
 import { readdirSync } from 'fs';
 import { resolve } from 'path';
-import { Client, Collection, Guild, GuildChannel, OverwriteResolvable, TextChannel } from 'discord.js';
+import { CategoryChannel, Client, Collection, Guild, GuildChannel, OverwriteResolvable, TextChannel } from 'discord.js';
 import { render } from 'mustache';
 
 const config = require('../src/config.json');
@@ -13,13 +13,13 @@ import { PokemonEvents } from './models/events';
 import { UrlWatcher } from  './services/url-watcher';
 import { post, getWebhookData, } from './services/utils';
 import { Dictionary } from './types/dictionary';
+import { ActiveEvent } from './types/events';
 
 const client = new Client();
 //const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json';
 const intervalM = 1 * 60 * 1000;
 const NotAvailable = 'N/A';
-const existingEventChannels: Dictionary = {};
 let started = false;
 
 // TODO: Show time when event expires that day
@@ -38,7 +38,13 @@ if (config.token) {
     client.on('ready', async () => {
         console.log(`Logged in as ${client.user?.tag}!`);
         // Once the bot is ready we can start updating the voice channels
-        await startActiveEventsUpdater();
+        // Prevent multiple
+        if (started) return;
+
+        setInterval(async () => {
+            started = true;
+            await createChannels();
+        }, intervalM);
         // Create channels as soon as Discord guild is available
         await createChannels();
     });
@@ -53,16 +59,6 @@ const createChannels = async (): Promise<void> => {
     for (const guildInfo of config.guilds) {
         await createVoiceChannels(guildInfo, activeEvents);
     }
-};
-
-const startActiveEventsUpdater = async (): Promise<void> => {
-    // Prevent multiple
-    if (started) return;
-
-    setInterval(async () => {
-        started = true;
-        await createChannels();
-    }, intervalM);
 };
 
 const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<void> => {
@@ -96,30 +92,17 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<v
         await channelCategory.updateOverwrite(everyoneRole, { CONNECT: false, VIEW_CHANNEL: true });
     }
 
-    const now = new Date();
+    //const now = new Date();
     // Loop all active events
     for (const event of activeEvents) {
-        // Format event ends date
-        const eventEndDate = event.end ? new Date(event.end) : NotAvailable;
         // Get channel name from event name and ends date
-        const channelName = render(config.channelNameFormat, {
-            month: eventEndDate !== NotAvailable ? eventEndDate.getMonth() + 1 : NotAvailable,
-            day: eventEndDate !== NotAvailable ? eventEndDate.getDate() : '',
-            name: event.name,
-        });
+        const channelName = formatEventName(event);
+        // Check if channel name matches event name, if not delete channel
         const channel = await createVoiceChannel(guild, channelName, channelCategory, permissions);
         if (channel == null) {
             continue;
         }
-        existingEventChannels[channel.id] = event;
-
-        // Check for expired event channels via `existingEventChannels`
-        if (eventEndDate !== NotAvailable) {
-            if (eventEndDate <= now) {
-                // TODO: Delete channel
-                await deleteChannel(guild, channel.id);
-            }
-        }
+        deleteExpiredEvents(channelCategory, activeEvents);
     }
 };
 
@@ -147,7 +130,39 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
         console.error(`Failed to find expired event channel ${channelId} to delete.`);
         return;
     }
-    await channel.delete();
+    try {
+        await channel.delete();
+    } catch (e) {
+        console.error(`Failed to delete channel ${channel.id}: ${e}`);
+    }
+};
+
+const deleteExpiredEvents = (guildChannel: GuildChannel, activeEvents: any): void => {
+    // Check if channels in category exists in active events, if so, keep it, otherwise delete it.
+    const channels = ((<CategoryChannel>(guildChannel)).children).array();
+    const activeEventNames = activeEvents.map((x: ActiveEvent) => formatEventName(x));
+    for (const channel of channels) {
+        if (!channel) {
+            continue;
+        }
+        // Check if channel does not exist in formatted active event names
+        if (!activeEventNames.includes(channel?.name)) {
+            // Delete channel if it's not an active event
+            deleteChannel(guildChannel.guild, channel?.id);
+        }
+    }
+};
+
+const formatEventName = (event: ActiveEvent): string => {
+    // Format event ends date
+    const eventEndDate = event.end ? new Date(event.end) : NotAvailable;
+    // Get channel name from event name and ends date
+    const channelName = render(config.channelNameFormat, {
+        month: eventEndDate !== NotAvailable ? eventEndDate.getMonth() + 1 : NotAvailable,
+        day: eventEndDate !== NotAvailable ? eventEndDate.getDate() : '',
+        name: event.name,
+    });
+    return channelName;
 };
 
 UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
