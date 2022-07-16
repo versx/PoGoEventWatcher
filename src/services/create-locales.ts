@@ -1,53 +1,47 @@
 'use strict';
 
-import { existsSync, readdir, readdirSync, readFileSync, writeFile } from 'fs';
-import { basename, resolve } from 'path';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+import axios from 'axios';
 
 const appLocalesFolder = resolve(__dirname, '../../static/locales');
-const pogoLocalesFolder = resolve(__dirname, '../../node_modules/pogo-translations/static/locales');
 
-readdir(appLocalesFolder, (err: NodeJS.ErrnoException | null, files: string[]) => {
-    let pogoLocalesFiles: any = [];
+async function createLocales() {
+    const englishRef = readFileSync(resolve(appLocalesFolder, '_en.json'), { encoding: 'utf8', flag: 'r' });
+    const remoteIndex: string[] = await axios.get('https://raw.githubusercontent.com/WatWowMap/pogo-translations/master/index.json')
+        .then((response) => response.data);
+    
+    await Promise.all(remoteIndex.map(async locale => {
+        const local = existsSync(resolve(appLocalesFolder, `_${locale}`)) 
+            ? readFileSync(resolve(appLocalesFolder, locale), { encoding: 'utf8', flag: 'r' })
+            : englishRef;
+        const baseName = locale.replace('.json', '').replace('_', '');
+        const trimmedRemoteFiles: { [key: string]: string } = {};
 
-    if (existsSync(pogoLocalesFolder)) {
-        pogoLocalesFiles = readdirSync(pogoLocalesFolder);
-    }
+        try {
+            const { data } = await axios.get(`https://raw.githubusercontent.com/WatWowMap/pogo-translations/master/static/locales/${baseName}.json`);
 
-    files.filter(file => { return file.startsWith('_'); }).forEach(file => {
-        const locale = basename(file, '.json').replace('_', '');
-        const localeFile = locale + '.json';
-        let translations = {};
-
-        console.log('Creating locale', locale);
-
-        if (pogoLocalesFiles.includes(localeFile)) {
-            console.log('Found pogo-translations for locale', locale);
-
-            const pogoTranslations = readFileSync(
-                resolve(pogoLocalesFolder, localeFile),
-                { encoding: 'utf8', flag: 'r' }
-            );
-            translations = JSON.parse(pogoTranslations.toString());
+            Object.keys(data).forEach(key => {
+                if (!key.startsWith('desc_') && !key.startsWith('pokemon_category_') && !key.startsWith('quest')) {
+                    trimmedRemoteFiles[key] = data[key];
+                }
+            });
+        } catch (e) {
+            console.warn(e, '\n', locale);
         }
 
-        if (locale !== 'en') {
-            // include en as fallback first
-            const appTransFallback = readFileSync(
-                resolve(appLocalesFolder, '_en.json'),
-                { encoding: 'utf8', flag: 'r' }
-            );
-            translations = Object.assign(translations, JSON.parse(appTransFallback.toString()));
-        }
-
-        const appTranslations = readFileSync(resolve(appLocalesFolder, file), { encoding: 'utf8', flag: 'r' });
-        translations = Object.assign(translations, JSON.parse(appTranslations.toString()));
-
-        writeFile(
-            resolve(appLocalesFolder, localeFile),
-            JSON.stringify(translations, null, 2), 
-            'utf8', 
-            () => {}
+        const finalTranslations = {
+            ...JSON.parse(englishRef),
+            ...JSON.parse(local),
+            ...trimmedRemoteFiles,
+        };
+        writeFileSync(
+            resolve(appLocalesFolder, `${baseName}.json`),
+            JSON.stringify(finalTranslations, null, 2),
+            'utf8',
         );
-        console.log(localeFile, 'file saved.');
-    });
-});
+        console.log(locale, 'file saved.');
+    }));
+}
+
+createLocales();
