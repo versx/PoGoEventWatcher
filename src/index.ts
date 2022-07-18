@@ -80,6 +80,12 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<v
     },{
         id: everyoneRole?.id ?? guild.id,
         deny: ['CONNECT'],
+    },{
+        id: client.user?.id ?? '0',
+        allow: [
+            'MANAGE_CHANNELS',
+            'VIEW_CHANNEL',
+        ],
     }];
     // Get event category channel from id
     const channelCategory = guild.channels.cache.get(guildInfo.eventsCategoryId);
@@ -102,7 +108,7 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<v
         if (channel == null) {
             continue;
         }
-        deleteExpiredEvents(channelCategory, activeEvents);
+        await deleteExpiredEvents(channelCategory, activeEvents);
     }
 };
 
@@ -134,15 +140,15 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
         return;
     }
     try {
-        await channel.delete();
+        await channel.delete('Expired event');
     } catch (e) {
         console.error(`Failed to delete channel ${channel.id}: ${e}`);
     }
 };
 
-const deleteExpiredEvents = (guildChannel: GuildChannel, activeEvents: any): void => {
+const deleteExpiredEvents = async (eventCategoryChannel: GuildChannel, activeEvents: any): Promise<void> => {
     // Check if channels in category exists in active events, if so, keep it, otherwise delete it.
-    const channels = ((<CategoryChannel>(guildChannel)).children).array();
+    const channels = ((<CategoryChannel>(eventCategoryChannel)).children).array();
     const activeEventNames = activeEvents.map((x: ActiveEvent) => formatEventName(x));
     for (const channel of channels) {
         if (!channel) {
@@ -151,7 +157,7 @@ const deleteExpiredEvents = (guildChannel: GuildChannel, activeEvents: any): voi
         // Check if channel does not exist in formatted active event names
         if (!activeEventNames.includes(channel?.name)) {
             // Delete channel if it's not an active event
-            deleteChannel(guildChannel.guild, channel?.id);
+            await deleteChannel(eventCategoryChannel.guild, channel?.id);
         }
     }
 };
