@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:  
+  eventwatcher:
+    container_name: EventWatcher
+    build:
+      context: ./EventWatcher
+    tty: true
+    # command: npm install -g npm@8.15.0
+    command: npm run create-locales && npm start
+    volumes:
+        - /etc/timezone:/etc/timezone:ro
+        - /etc/localtime:/etc/localtime:ro
+        - ./EventWatcher/config/src:/usr/src/app/config
+        - ./EventWatcher/static/locales:/usr/src/app/static/locales
+    networks:
+      your-internal-network:
+          ipv4_address: 0.0.0.0 # Your internal IP-address
+    security_opt:
+        - no-new-privileges:true
+    environment:
+        - PUID=${PUID}
+        - PGID=${PGID}
+        - TZ=${TZ}
