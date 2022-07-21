@@ -8,4 +8,4 @@ COPY package.json .
 RUN npm install
 COPY . .
 RUN npm run create-locales
-RUN npm start
+CMD ["npm", "start"]
