@@ -4,9 +4,12 @@ import { readdirSync } from 'fs';
 import { resolve } from 'path';
 import {
     CategoryChannel,
+    CategoryChannelResolvable,
     Client,
     Guild,
+    GuildBasedChannel,
     GuildChannel,
+    Intents,
     TextChannel,
 } from 'discord.js';
 import { render } from 'mustache';
@@ -20,24 +23,27 @@ import { UrlWatcher } from  './services/url-watcher';
 import { post, getWebhookData } from './services/utils';
 import { ActiveEvent } from './types/events';
 
-const client = new Client();
+const client = new Client({
+    intents: [
+        Intents.FLAGS.DIRECT_MESSAGES,
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_PRESENCES,
+        Intents.FLAGS.GUILD_WEBHOOKS,
+    ],
+    partials: [
+        'CHANNEL',
+        'GUILD_MEMBER',
+        'MESSAGE',
+        'USER',
+    ],
+});
+
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json';
 const intervalM = 1 * 60 * 1000; // 60 seconds
 const NotAvailable = 'N/A';
 let started = false;
-
-const EveryonePermissionOverwrites = {
-    CONNECT: false,
-    VIEW_CHANNEL: true,
-};
-
-const BotPermissionOverwrites = {
-    CONNECT: true,
-    VIEW_CHANNEL: true,
-    MANAGE_CHANNELS: true,
-    MANAGE_MESSAGES: true,
-    MANAGE_ROLES: true,
-};
 
 // TODO: Show time when event expires that day
 // TODO: Remove all 'any' types
@@ -65,7 +71,7 @@ if (config.token) {
         // Create channels as soon as Discord guild is available
         await createChannels();
     });
-    client.on('message', handleCommand);
+    client.on('messageCreate', handleCommand);
     client.login(config.token);
 }
 
@@ -91,17 +97,14 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: ActiveEvent[]):
     }
 
     // Get event category channel from id
-    const channelCategory = guild.channels.cache.get(guildInfo.eventsCategoryId);
+    const channelCategory = await guild.channels.fetch(guildInfo.eventsCategoryId);
     if (!channelCategory) {
         console.error(`Failed to get channel category by id ${guildInfo.eventsCategoryId} from guild ${guildInfo.id}`);
         return;
     }
 
-    // Update @everyone role permissions for event channel category
-    await channelCategory.updateOverwrite(guild.id, EveryonePermissionOverwrites);
-
-    // Update bot permissions for event category channel
-    await channelCategory.updateOverwrite(client.user!.id, BotPermissionOverwrites);
+    // Set role permissions for event channel category
+    await setChannelPermissions(guild, channelCategory);
 
     // Loop all active events
     for (const event of activeEvents) {
@@ -120,24 +123,22 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: ActiveEvent[]):
 
 const createVoiceChannel = async (guild: Guild,
                             channelName: string,
-                        channelCategory: GuildChannel): Promise<GuildChannel | undefined> => {
+                        channelCategory: GuildChannel): Promise<GuildBasedChannel | undefined> => {
     // Attempt to find channel from ChannelManager cache
-    let channel = guild.channels.cache.find(x => x.name.toLowerCase() === channelName.toLowerCase());
+    let channel = guild.channels.cache.find((x: any) => x.name.toLowerCase() === channelName.toLowerCase());
     // Check if channel already exists
     if (channel) {
         return channel;
     }
-    // Channel does not exist, create it
+
     try {
-        // Create voice channel with permissions
+        // Channel does not exist, create voice channel with permissions
+        const permissions = getDefaultPermissions(guild.id, client.user!.id);
         channel = await guild.channels.create(channelName, {
-            type: 'voice',
-            parent: channelCategory,
+            permissionOverwrites: permissions,
+            parent: <CategoryChannelResolvable>channelCategory,
+            type: 'GUILD_VOICE',
         });
-        // Set channel permissions for @everyone
-        channel.updateOverwrite(guild.id, EveryonePermissionOverwrites);
-        // Set channel permissions for bot
-        channel.updateOverwrite(client.user?.id ?? '0', BotPermissionOverwrites);
 
         console.info('Event voice channel', channel?.name, 'created');
         return channel;
@@ -155,7 +156,7 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
         return;
     }
     // Only delete voice channels
-    if (channel.isText()) {
+    if (channel.type !== 'GUILD_VOICE') {
         return;
     }
     try {
@@ -169,16 +170,16 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
 
 const deleteExpiredEvents = async (eventCategoryChannel: GuildChannel, activeEvents: any): Promise<void> => {
     // Check if channels in category exists in active events, if so, keep it, otherwise delete it.
-    const channels = ((<CategoryChannel>(eventCategoryChannel)).children).array();
+    const channelChildren = (<CategoryChannel>eventCategoryChannel).children;
     const activeEventNames = activeEvents.map((x: ActiveEvent) => formatEventName(x));
-    for (const channel of channels) {
-        if (!channel) {
+    for (const [channelId, childChannel] of channelChildren) {
+        if (!childChannel) {
             continue;
         }
         // Check if channel does not exist in formatted active event names
-        if (!activeEventNames.includes(channel?.name)) {
+        if (!activeEventNames.includes(childChannel?.name)) {
             // Delete channel if it's not an active event
-            await deleteChannel(eventCategoryChannel.guild, channel?.id);
+            await deleteChannel(eventCategoryChannel.guild, channelId);
         }
     }
 };
@@ -198,6 +199,31 @@ const formatEventName = (event: ActiveEvent): string => {
         name: event.name,
     });
     return channelName;
+};
+
+const setChannelPermissions = async (guild: Guild, channel: GuildChannel) => {
+    const everyoneId = guild.id;
+    const botId = client.user!.id;
+    const permissions = getDefaultPermissions(everyoneId, botId);
+    await channel.permissionOverwrites.set(permissions);
+};
+
+const getDefaultPermissions = (everyoneId: string, botId: string): any => {
+    const permissions = [{
+        id: everyoneId,
+        allow: ['VIEW_CHANNEL'],
+        deny: ['CONNECT'],
+    }, {
+        id: botId,
+        allow: [
+            'VIEW_CHANNEL',
+            'CONNECT',
+            'MANAGE_CHANNELS',
+            'MANAGE_MESSAGES',
+            'MANAGE_ROLES',
+        ],
+    }];
+    return permissions;
 };
 
 UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
@@ -226,7 +252,7 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
                         const channel = guild.channels.cache.get(webhookData.channel_id);
                         try {
                             // Ensure we only try to delete messages from text channels
-                            if (channel?.type == 'text') {
+                            if (channel?.type == 'GUILD_TEXT') {
                                 (channel as TextChannel).bulkDelete(100);
                             }
                         } catch (err) {

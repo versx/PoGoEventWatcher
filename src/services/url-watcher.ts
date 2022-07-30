@@ -21,4 +21,4 @@ export const UrlWatcher = (urlToWatch: string, interval: number, changedCallback
             changedCallback(null);
         }
     }, interval);
-}
+};
