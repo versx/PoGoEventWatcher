@@ -4,11 +4,12 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import axios from 'axios';
 
+const BaseTranslationsUrl = 'https://raw.githubusercontent.com/WatWowMap/pogo-translations/master/';
 const appLocalesFolder = resolve(__dirname, '../../static/locales');
 
 async function createLocales() {
     const englishRef = readFileSync(resolve(appLocalesFolder, '_en.json'), { encoding: 'utf8', flag: 'r' });
-    const remoteIndex: string[] = await axios.get('https://raw.githubusercontent.com/WatWowMap/pogo-translations/master/index.json')
+    const remoteIndex: string[] = await axios.get(BaseTranslationsUrl + 'index.json')
         .then((response) => response.data);
     
     await Promise.all(remoteIndex.map(async locale => {
@@ -19,7 +20,7 @@ async function createLocales() {
         const trimmedRemoteFiles: { [key: string]: string } = {};
 
         try {
-            const { data } = await axios.get(`https://raw.githubusercontent.com/WatWowMap/pogo-translations/master/static/locales/${baseName}.json`);
+            const { data } = await axios.get(`${BaseTranslationsUrl}static/locales/${baseName}.json`);
 
             Object.keys(data).forEach(key => {
                 if (!key.startsWith('desc_') && !key.startsWith('pokemon_category_') && !key.startsWith('quest')) {

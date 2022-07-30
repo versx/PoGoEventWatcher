@@ -1,13 +1,24 @@
 'use strict';
 
-const axios = require('axios');
+const axios = require('axios').default;
+
+const UserAgent = 'PokemonGoEventWatcher';
 
 /**
  * HTTP GET request to url
  * @param {*} url Web address url to make request to
  */
 export const get = async <T>(url: string): Promise<T | null> => {
-    const req = await axios.get(url);
+    //const req = await axios.get(url);
+    const req = await axios({
+        url: url,
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': UserAgent,
+        },
+    });
     if (req.status !== 200) {
         console.error(`Failed to get data from ${url}:`, req.statusText);
         return null;
@@ -28,6 +39,7 @@ export const post = async <T>(url: string, data: any): Promise<T | null> => {
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'User-Agent': UserAgent,
         },
     });
     //const req = await axios.post(url, data);
@@ -46,14 +58,6 @@ export const post = async <T>(url: string, data: any): Promise<T | null> => {
  */
 export const cropText = (text: string, maxLength: number): string => {
     return (text.length > maxLength) ? text.substr(0, maxLength - 3) + '...' : text;
-};
-
-/**
- * Strip PMSF icon format for raw ids
- * @param {*} ids 
- */
-export const stripIds = (ids: string[]): number[] => {
-    return ids.map(x => parseInt(x.replace('_00', '')));
 };
 
 /**
@@ -102,7 +106,8 @@ export const getWebhookData = async (webhookUrl: string): Promise<WebhookData | 
     return null;
 };
 
-interface WebhookData {
+// TODO: Move to types
+export interface WebhookData {
     type: number;
     id: string;
     name: string;

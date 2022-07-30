@@ -8,12 +8,12 @@ import { User } from 'discord.js';
  * @param {*} data 
  */
 export const sendDm = async (member: User, data: any): Promise<void> => {
-    if (!member || !data) {
-        console.warn('Member or data is null, cannot send direct message');
+    if (!member) {
+        console.error('Failed to find Discord member', member);
         return;
     }
-    if (!member) {
-        console.error('Failed to find member', member);
+    if (!data) {
+        console.warn('DM data is null, cannot send direct message');
         return;
     }
     const dm = await member.createDM();

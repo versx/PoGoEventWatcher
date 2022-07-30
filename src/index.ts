@@ -2,7 +2,13 @@
 
 import { readdirSync } from 'fs';
 import { resolve } from 'path';
-import { CategoryChannel, Client, Collection, Guild, GuildChannel, OverwriteResolvable, TextChannel } from 'discord.js';
+import {
+    CategoryChannel,
+    Client,
+    Guild,
+    GuildChannel,
+    TextChannel,
+} from 'discord.js';
 import { render } from 'mustache';
 
 const config = require('../src/config.json');
@@ -11,16 +17,27 @@ import { sendDm } from './handlers/dm';
 import { createActiveEventEmbed, createEmbedFromNewEvent } from './handlers/embeds';
 import { PokemonEvents } from './models/events';
 import { UrlWatcher } from  './services/url-watcher';
-import { post, getWebhookData, } from './services/utils';
-import { Dictionary } from './types/dictionary';
+import { post, getWebhookData, WebhookData } from './services/utils';
 import { ActiveEvent } from './types/events';
 
 const client = new Client();
-//const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json';
 const intervalM = 1 * 60 * 1000;
 const NotAvailable = 'N/A';
 let started = false;
+
+const EveryonePermissionOverwrites = {
+    CONNECT: false,
+    VIEW_CHANNEL: true,
+};
+
+const BotPermissionOverwrites = {
+    CONNECT: true,
+    VIEW_CHANNEL: true,
+    MANAGE_CHANNELS: true,
+    MANAGE_MESSAGES: true,
+    MANAGE_ROLES: true,
+};
 
 // TODO: Show time when event expires that day
 // TODO: Remove all 'any' types
@@ -72,75 +89,79 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<v
         console.error(`Failed to get guild by id ${guildInfo.id}`);
         return;
     }
-    // Get guild @everyone role from guild id
-    const everyoneRole = guild.roles.cache.find(x => x.id === guild.id);
-    const permissions: OverwriteResolvable[] = [{
-        id: everyoneRole?.id ?? guild.id,
-        allow: ['VIEW_CHANNEL'],
-    },{
-        id: everyoneRole?.id ?? guild.id,
-        deny: ['CONNECT'],
-    },{
-        id: client.user?.id ?? '0',
-        allow: [
-            'MANAGE_CHANNELS',
-            'VIEW_CHANNEL',
-        ],
-    }];
+
     // Get event category channel from id
     const channelCategory = guild.channels.cache.get(guildInfo.eventsCategoryId);
     if (!channelCategory) {
         console.error(`Failed to get channel category by id ${guildInfo.eventsCategoryId} from guild ${guildInfo.id}`);
         return;
     }
-    if (everyoneRole != null) {
-        // Update permissions for event category channel
-        await channelCategory.updateOverwrite(everyoneRole, { CONNECT: false, VIEW_CHANNEL: true });
-    }
 
-    //const now = new Date();
+    // Update @everyone role permissions for event channel category
+    await channelCategory.updateOverwrite(guild.id, EveryonePermissionOverwrites);
+
+    // Update bot permissions for event category channel
+    await channelCategory.updateOverwrite(client.user!.id, BotPermissionOverwrites);
+
     // Loop all active events
     for (const event of activeEvents) {
         // Get channel name from event name and ends date
         const channelName = formatEventName(event);
         // Check if channel name matches event name, if not delete channel
-        const channel = await createVoiceChannel(guild, channelName, channelCategory, permissions);
+        const channel = await createVoiceChannel(guild, channelName, channelCategory);
         if (channel == null) {
+            // Failed to delete channel, continue on to the next
             continue;
         }
+        // Attempt to delete any expired event channels
         await deleteExpiredEvents(channelCategory, activeEvents);
     }
 };
 
 const createVoiceChannel = async (guild: Guild,
                             channelName: string,
-                        channelCategory: GuildChannel,
-                            permissions: Collection<string, OverwriteResolvable> | OverwriteResolvable[] | undefined): Promise<GuildChannel | undefined> => {
+                        channelCategory: GuildChannel): Promise<GuildChannel | undefined> => {
+    // Attempt to find channel from ChannelManager cache
     let channel = guild.channels.cache.find(x => x.name.toLowerCase() === channelName.toLowerCase());
-    // Check if channel does not exist
-    if (!channel) {
+    // Check if channel already exists
+    if (channel) {
+        return channel;
+    }
+    // Channel does not exist, create it
+    try {
         // Create voice channel with permissions
         channel = await guild.channels.create(channelName, {
             type: 'voice',
             parent: channelCategory,
-            permissionOverwrites: permissions,
         });
+        // Set channel permissions for @everyone
+        channel.updateOverwrite(guild.id, EveryonePermissionOverwrites);
+        // Set channel permissions for bot
+        channel.updateOverwrite(client.user?.id ?? '0', BotPermissionOverwrites);
+
         console.info('Event voice channel', channel?.name, 'created');
+        return channel;
+    } catch (e) {
+        console.error('createVoiceChannel:', e);
     }
-    return channel;
+    return undefined;
 };
 
 const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => {
+    // Fetch channel by id from ChannelManager cache
     const channel = guild.channels.cache.get(channelId);
     if (!channel) {
         console.error(`Failed to find expired event channel ${channelId} to delete.`);
         return;
     }
+    // Only delete voice channels
     if (channel.isText()) {
         return;
     }
     try {
-        await channel.delete('Expired event');
+        // Delete expired event channel
+        await channel.delete('Event has expired');
+        console.log('Event voice channel', channel.name, 'deleted');
     } catch (e) {
         console.error(`Failed to delete channel ${channel.id}: ${e}`);
     }
@@ -166,9 +187,14 @@ const formatEventName = (event: ActiveEvent): string => {
     // Format event ends date
     const eventEndDate = event.end ? new Date(event.end) : NotAvailable;
     // Get channel name from event name and ends date
+    // Use mustache to template the channel's naming scheme 
     const channelName = render(config.channelNameFormat, {
-        month: eventEndDate !== NotAvailable ? eventEndDate.getMonth() + 1 : NotAvailable,
-        day: eventEndDate !== NotAvailable ? eventEndDate.getDate() : '',
+        month: eventEndDate !== NotAvailable
+            ? eventEndDate.getMonth() + 1
+            : NotAvailable,
+        day: eventEndDate !== NotAvailable
+            ? eventEndDate.getDate()
+            : '',
         name: event.name,
     });
     return channelName;
@@ -183,13 +209,18 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
             for (const webhook of config.webhooks) {
                 // Delete previous event messages if set
                 if (config.deletePreviousEvents) {
-                    getWebhookData(webhook)?.then(whData => {
-                        if (whData?.guild_id && whData?.channel_id) {
-                            const guild = client.guilds.cache.get(whData.guild_id);
+                    // Get information returned about webhook
+                    getWebhookData(webhook)?.then((webhookData: WebhookData | null) => {
+                        // Check if 
+                        if (webhookData?.guild_id && webhookData?.channel_id) {
+                            const guild = client.guilds.cache.get(webhookData.guild_id);
                             if (guild) {
-                                const channel = guild.channels.cache.get(whData.channel_id);
+                                const channel = guild.channels.cache.get(webhookData.channel_id);
                                 try {
-                                    (channel as TextChannel).bulkDelete(100);
+                                    // Ensure we only try to delete messages from text channels
+                                    if (channel?.type == 'text') {
+                                        (channel as TextChannel).bulkDelete(100);
+                                    }
                                 } catch (err) {
                                     console.error('Error:', err);
                                 }
@@ -212,6 +243,7 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
                     console.error(`Failed to get member by id ${userId}`);
                     continue;
                 }
+                // Send DM info about event to Discord user
                 await sendDm(member, { embed: embed });
                 console.info(`New event direct message sent to ${member?.username} (${member?.id})`);
             }

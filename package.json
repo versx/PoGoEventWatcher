@@ -30,14 +30,15 @@
     "mustache": "^4.1.0"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/i18n": "^0.12.0",
     "@types/mustache": "^4.1.1",
     "@types/node": "^14.0.1",
     "@typescript-eslint/eslint-plugin": "^3.0.0",
     "@typescript-eslint/parser": "^3.0.0",
     "eslint": "^7.0.0",
-    "typescript": "^3.9.7",
-    "nodemon": "^2.0.7"
+    "nodemon": "^2.0.7",
+    "typescript": "^3.9.7"
   },
   "nodemonConfig": {
     "ignore": [
