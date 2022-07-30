@@ -1,6 +1,7 @@
 'use strict';
 
 import { NoParamCallback } from 'fs';
+import { isEqual } from 'lodash';
 import { get, deepEqual } from '../services/utils';
 
 let previousData: any;
@@ -15,7 +16,7 @@ export const UrlWatcher = (urlToWatch: string, interval: number, changedCallback
             previousData = data;
             return;
         }
-        if (!deepEqual(previousData, data)) {
+        if (!isEqual(previousData, data)) {
             previousData = data;
             changedCallback(null);
         }

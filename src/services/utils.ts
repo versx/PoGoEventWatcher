@@ -1,7 +1,6 @@
 'use strict';
 
 const axios = require('axios').default;
-
 const UserAgent = 'PokemonGoEventWatcher';
 
 /**
@@ -32,18 +31,17 @@ export const get = async <T>(url: string): Promise<T | null> => {
  * @param {*} data 
  */
 export const post = async <T>(url: string, data: any): Promise<T | null> => {
-    const req = axios({
-        url: url,
+    const req = await axios({
+        url,
         method: 'POST',
-        data: data,
+        data,
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': UserAgent,
         },
     });
-    //const req = await axios.post(url, data);
-    if (req.status !== 200 && req.statusText !== 'No Content') {
+    if (req.status !== 200 || (req.status !== 204 && req.statusText !== 'No Content')) {
         console.error(`Failed to post data to ${url}:`, req.statusText);
         return null;
     }

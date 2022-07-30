@@ -17,12 +17,12 @@ import { sendDm } from './handlers/dm';
 import { createActiveEventEmbed, createEmbedFromNewEvent } from './handlers/embeds';
 import { PokemonEvents } from './models/events';
 import { UrlWatcher } from  './services/url-watcher';
-import { post, getWebhookData, WebhookData } from './services/utils';
+import { post, getWebhookData } from './services/utils';
 import { ActiveEvent } from './types/events';
 
 const client = new Client();
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json';
-const intervalM = 1 * 60 * 1000;
+const intervalM = 1 * 60 * 1000; // 60 seconds
 const NotAvailable = 'N/A';
 let started = false;
 
@@ -78,7 +78,7 @@ const createChannels = async (): Promise<void> => {
     }
 };
 
-const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<void> => {
+const createVoiceChannels = async (guildInfo: any, activeEvents: ActiveEvent[]): Promise<void> => {
     // Check if event category id set for guild
     if (!guildInfo.eventsCategoryId) {
         return;
@@ -210,41 +210,47 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
                 // Delete previous event messages if set
                 if (config.deletePreviousEvents) {
                     // Get information returned about webhook
-                    getWebhookData(webhook)?.then((webhookData: WebhookData | null) => {
-                        // Check if 
-                        if (webhookData?.guild_id && webhookData?.channel_id) {
-                            const guild = client.guilds.cache.get(webhookData.guild_id);
-                            if (guild) {
-                                const channel = guild.channels.cache.get(webhookData.channel_id);
-                                try {
-                                    // Ensure we only try to delete messages from text channels
-                                    if (channel?.type == 'text') {
-                                        (channel as TextChannel).bulkDelete(100);
-                                    }
-                                } catch (err) {
-                                    console.error('Error:', err);
-                                }
+                    const webhookData = await getWebhookData(webhook);
+                    if (!webhookData) {
+                        // Failed to get webhook result data from response
+                        console.error(`Failed to get webhook data from ${webhook}`);
+                        continue;
+                    }
+                    // Check if webhook result response has 
+                    if (!webhookData?.guild_id || !webhookData?.channel_id) {
+                        // Missing required information from webhook data response
+                        continue;
+                    }
+                    const guild = client.guilds.cache.get(webhookData.guild_id);
+                    if (guild) {
+                        const channel = guild.channels.cache.get(webhookData.channel_id);
+                        try {
+                            // Ensure we only try to delete messages from text channels
+                            if (channel?.type == 'text') {
+                                (channel as TextChannel).bulkDelete(100);
                             }
+                        } catch (err) {
+                            // Fails if messages to delete are older than 14 days
+                            console.error('Error:', err);
                         }
-                    }).catch(err => {
-                        console.error(`Failed to get webhook data for ${webhook}: ${err}`);
-                    });
+                    }
                 }
                 await post(<string>webhook, payload);
             }
         }
-        // If bot token set we're logged into Discord bot
-        if (config.token) {
+        // Check that bot token and user ids list are set
+        if (config.token && config.userIds.length) {
+            // Create Discord embed that'll be sent to users
             const embed = await createActiveEventEmbed(event);
             // Send direct message to users
             for (const userId of config.userIds) {
                 const member = client.users.cache.get(userId);
-                if (member == null) {
+                if (!member || member == null) {
                     console.error(`Failed to get member by id ${userId}`);
                     continue;
                 }
                 // Send DM info about event to Discord user
-                await sendDm(member, { embed: embed });
+                await sendDm(member, { embed });
                 console.info(`New event direct message sent to ${member?.username} (${member?.id})`);
             }
         }
