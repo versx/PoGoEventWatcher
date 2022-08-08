@@ -22,7 +22,7 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 1. Clone repository `git clone https://github.com/versx/EventWatcher && cd EventWatcher`
 1. Copy config `cp src/config.example.json src/config.json`
 1. Fill out config.json
-1. Copy docker-compose.example.yml `cp docker-compose.example.yml cp docker-compose.example.yml`
+1. Copy docker-compose.example.yml `cp docker-compose.example.yml cp docker-compose.yml`
 1. Change according to your needs (defaults should work fine)
 1. Run `docker-compose up -d`
 
