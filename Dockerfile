@@ -1,8 +1,15 @@
-FROM node:16 as build
+FROM alpine
 
-WORKDIR /app
+RUN  apk update \
+  && apk add --no-cache bash \
+  && apk --no-cache add curl \
+  && apk --no-cache add git \
+  && apk add --no-cache nodejs npm
+
+WORKDIR /usr/src/app
 COPY package*.json .
-RUN npm install -g npm@8.15.0
+COPY .eslintrc .
+COPY tsconfig.json .
+RUN npm install
 COPY . .
 RUN npm run create-locales
-CMD ["npm", "start"]

@@ -1,22 +1,20 @@
 version: "3.7"
 
 services:  
-  eventwatcher:
-    container_name: EventWatcher
+  pogoeventwatcher:
+    container_name: PoGo_EventWatcher
     build:
       context: ./EventWatcher #Change this according to your own mapping
-    tty: true
-    command: npm run create-locales && npm start
+    command: npm start
+    restart: always
     volumes:
         - /etc/timezone:/etc/timezone:ro
         - /etc/localtime:/etc/localtime:ro
-        - ./EventWatcher/config/src:/usr/src/app/config
-    networks:
-      your-internal-network:
-          ipv4_address: 0.0.0.0 # Your internal IP-address
-    security_opt:
-        - no-new-privileges:true
+        - ./EventWatcher/src/config.json:/usr/src/app/src/config.json
+    # networks:
+    #   your-internal-network:
+    #     ipv4_address: 0.0.0.0 # Your internal IP-address
     environment:
-        - PUID=${PUID}
-        - PGID=${PGID}
-        - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}

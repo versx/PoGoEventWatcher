@@ -17,6 +17,15 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 1. Create locales `npm run create-locales`
 1. Start `npm start`
 
+## Running the app in Docker
+
+1. Clone repository `git clone https://github.com/versx/EventWatcher && cd EventWatcher`
+1. Copy config `cp src/config.example.json src/config.json`
+1. Fill out config.json
+1. Copy docker-compose.example.yml `cp docker-compose.example.yml cp docker-compose.example.yml`
+1. Change according to your needs (defaults should work fine)
+1. Run `docker-compose up -d`
+
 ## Configuration
 
 ```json
@@ -59,6 +68,15 @@ Event Voice Channels Category
 Posting Events
 
 - Send Messages
+
+You can use the following example URL to invite your bot to your server (you have to be admin)
+`https://discord.com/oauth2/authorize?client_id=INSERT_CLIENT_ID_HERE&scope=bot&permissions=538110000`
+
+Disclaimer:
+1. Make sure you are admin of the Discordserver
+1. On the "Bot" tab in Discord Developer Dashboard, make sure that the settings are as following:
+
+![Discord Bot](examples/discord-bottab.png)
 
 ## Commands
 
