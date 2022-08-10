@@ -7,7 +7,8 @@ RUN  apk update \
   && apk add --no-cache nodejs npm
 
 WORKDIR /usr/src/app
-COPY package*.json .
+COPY package.json .
+COPY package-lock.json .
 COPY .eslintrc .
 COPY tsconfig.json .
 RUN npm install
