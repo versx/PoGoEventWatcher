@@ -24,7 +24,7 @@ Uses [ccev/pogoinfo](https://github.com/ccev/pogoinfo) to check data for new eve
 1. Fill out config.json
 1. Copy docker-compose.example.yml `cp docker-compose.example.yml cp docker-compose.yml`
 1. Change according to your needs (defaults should work fine)
-1. Run `docker-compose up -d`
+1. Run `docker-compose up -d` or run `docker-compose up -d --build` if you made changes to local files after the first Dockerbuild
 
 ## Configuration
 
