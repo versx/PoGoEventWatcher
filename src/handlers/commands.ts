@@ -11,13 +11,13 @@ export const commands = new Collection<string, Command>();
  * Parse and validate Discord commands handler
  * @param {*} message 
  */
-export const handleCommand = async (message: Message) => {
+export const handleCommand = async (message: Message<boolean>): Promise<void> => {
     // Skip bot messages and messages that don't start with our prefix
     if (!message.content.startsWith(config.prefix) || message.author.bot)
         return;
 
     // Skip messages not in our allowed bot command channels unless it's a DM
-    if (!config.botChannelIds.includes(message.channel.id) && message.channel.type !== 'dm')
+    if (!config.botChannelIds.includes(message.channel.id) && message.channel.type !== 'DM')
         return;
 
     // Trim prefix and split remaining by space to get our args provided, and command (if any)
@@ -38,11 +38,11 @@ export const handleCommand = async (message: Message) => {
 
     // Check if owner only command
     if (command.ownerOnly && !config.adminIds.includes(message.author.id))
-        return message.reply({ embed: { description: ':x: **Access Not Granted** You do not have permission to execute this command.', color: 0xff1100 }});
+        message.reply({ embeds: [{ description: ':x: **Access Not Granted** You do not have permission to execute this command.', color: 0xff1100 }] });
 
     // Check if guild only command that does not support DMs
-    if (command.guildOnly && message.channel.type === 'dm') {
-        return message.reply({ embed: { description: 'Command does not support DM messages!', color: 0xff1100} });
+    if (command.guildOnly && message.channel.type === 'DM') {
+        message.reply({ embeds: [{ description: 'Command does not support DM messages!', color: 0xff1100}] });
     }
 
     // Check if command needs arguments set and if they aren't set
@@ -51,13 +51,13 @@ export const handleCommand = async (message: Message) => {
         if (command.usage) {
             reply += `\nThe proper usage would be: \`${config.prefix}${command.name} ${command.usage}\``;
         }
-        return message.channel.send({ embed: { description: reply, color: 0xff1100} });
+        message.channel.send({ embeds: [{ description: reply, color: 0xff1100}] });
     }
 
     try {
         await command.execute(message, args);
     } catch (error) {
         console.error(error);
-        message.reply({ embed: { description: 'There was an error trying to execute that command!', color: 0xff1100} });
+        message.reply({ embeds: [{ description: 'There was an error trying to execute that command!', color: 0xff1100}] });
     }
 }

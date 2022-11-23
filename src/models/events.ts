@@ -1,7 +1,6 @@
 'use strict';
 
-import { getPokemonName } from '../services/locale';
-import { get, stripIds, } from '../services/utils';
+import { get } from '../services/utils';
 import { ActiveEvent, ActiveRaidsDictionary } from '../types/events';
 
 const baseUrl = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/';

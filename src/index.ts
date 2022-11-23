@@ -2,7 +2,16 @@
 
 import { readdirSync } from 'fs';
 import { resolve } from 'path';
-import { CategoryChannel, Client, Collection, Guild, GuildChannel, OverwriteResolvable, TextChannel } from 'discord.js';
+import {
+    CategoryChannel,
+    CategoryChannelResolvable,
+    Client,
+    Guild,
+    GuildBasedChannel,
+    GuildChannel,
+    Intents,
+    TextChannel,
+} from 'discord.js';
 import { render } from 'mustache';
 
 const config = require('../src/config.json');
@@ -11,14 +20,28 @@ import { sendDm } from './handlers/dm';
 import { createActiveEventEmbed, createEmbedFromNewEvent } from './handlers/embeds';
 import { PokemonEvents } from './models/events';
 import { UrlWatcher } from  './services/url-watcher';
-import { post, getWebhookData, } from './services/utils';
-import { Dictionary } from './types/dictionary';
+import { post, getWebhookData } from './services/utils';
 import { ActiveEvent } from './types/events';
 
-const client = new Client();
-//const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json';
+const client = new Client({
+    intents: [
+        Intents.FLAGS.DIRECT_MESSAGES,
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_PRESENCES,
+        Intents.FLAGS.GUILD_WEBHOOKS,
+    ],
+    partials: [
+        'CHANNEL',
+        'GUILD_MEMBER',
+        'MESSAGE',
+        'USER',
+    ],
+});
+
 const urlToWatch = 'https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json';
-const intervalM = 1 * 60 * 1000;
+const intervalM = 1 * 60 * 1000; // 60 seconds
 const NotAvailable = 'N/A';
 let started = false;
 
@@ -48,7 +71,7 @@ if (config.token) {
         // Create channels as soon as Discord guild is available
         await createChannels();
     });
-    client.on('message', handleCommand);
+    client.on('messageCreate', handleCommand);
     client.login(config.token);
 }
 
@@ -61,7 +84,7 @@ const createChannels = async (): Promise<void> => {
     }
 };
 
-const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<void> => {
+const createVoiceChannels = async (guildInfo: any, activeEvents: ActiveEvent[]): Promise<void> => {
     // Check if event category id set for guild
     if (!guildInfo.eventsCategoryId) {
         return;
@@ -72,75 +95,74 @@ const createVoiceChannels = async (guildInfo: any, activeEvents: any): Promise<v
         console.error(`Failed to get guild by id ${guildInfo.id}`);
         return;
     }
-    // Get guild @everyone role from guild id
-    const everyoneRole = guild.roles.cache.find(x => x.id === guild.id);
-    const permissions: OverwriteResolvable[] = [{
-        id: everyoneRole?.id ?? guild.id,
-        allow: ['VIEW_CHANNEL'],
-    },{
-        id: everyoneRole?.id ?? guild.id,
-        deny: ['CONNECT'],
-    },{
-        id: client.user?.id ?? '0',
-        allow: [
-            'MANAGE_CHANNELS',
-            'VIEW_CHANNEL',
-        ],
-    }];
+
     // Get event category channel from id
-    const channelCategory = guild.channels.cache.get(guildInfo.eventsCategoryId);
+    const channelCategory = await guild.channels.fetch(guildInfo.eventsCategoryId);
     if (!channelCategory) {
         console.error(`Failed to get channel category by id ${guildInfo.eventsCategoryId} from guild ${guildInfo.id}`);
         return;
     }
-    if (everyoneRole != null) {
-        // Update permissions for event category channel
-        await channelCategory.updateOverwrite(everyoneRole, { CONNECT: false, VIEW_CHANNEL: true });
-    }
 
-    //const now = new Date();
+    // Set role permissions for event channel category
+    await setChannelPermissions(guild, channelCategory);
+
     // Loop all active events
     for (const event of activeEvents) {
         // Get channel name from event name and ends date
         const channelName = formatEventName(event);
         // Check if channel name matches event name, if not delete channel
-        const channel = await createVoiceChannel(guild, channelName, channelCategory, permissions);
+        const channel = await createVoiceChannel(guild, channelName, channelCategory);
         if (channel == null) {
+            // Failed to delete channel, continue on to the next
             continue;
         }
+        // Attempt to delete any expired event channels
         await deleteExpiredEvents(channelCategory, activeEvents);
     }
 };
 
 const createVoiceChannel = async (guild: Guild,
                             channelName: string,
-                        channelCategory: GuildChannel,
-                            permissions: Collection<string, OverwriteResolvable> | OverwriteResolvable[] | undefined): Promise<GuildChannel | undefined> => {
-    let channel = guild.channels.cache.find(x => x.name.toLowerCase() === channelName.toLowerCase());
-    // Check if channel does not exist
-    if (!channel) {
-        // Create voice channel with permissions
-        channel = await guild.channels.create(channelName, {
-            type: 'voice',
-            parent: channelCategory,
-            permissionOverwrites: permissions,
-        });
-        console.info('Event voice channel', channel?.name, 'created');
+                        channelCategory: GuildChannel): Promise<GuildBasedChannel | undefined> => {
+    // Attempt to find channel from ChannelManager cache
+    let channel = guild.channels.cache.find((x: any) => x.name.toLowerCase() === channelName.toLowerCase());
+    // Check if channel already exists
+    if (channel) {
+        return channel;
     }
-    return channel;
+
+    try {
+        // Channel does not exist, create voice channel with permissions
+        const permissions = getDefaultPermissions(guild.id, client.user!.id);
+        channel = await guild.channels.create(channelName, {
+            permissionOverwrites: permissions,
+            parent: <CategoryChannelResolvable>channelCategory,
+            type: 'GUILD_VOICE',
+        });
+
+        console.info('Event voice channel', channel?.name, 'created');
+        return channel;
+    } catch (e) {
+        console.error('createVoiceChannel:', e);
+    }
+    return undefined;
 };
 
 const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => {
+    // Fetch channel by id from ChannelManager cache
     const channel = guild.channels.cache.get(channelId);
     if (!channel) {
         console.error(`Failed to find expired event channel ${channelId} to delete.`);
         return;
     }
-    if (channel.isText()) {
+    // Only delete voice channels
+    if (channel.type !== 'GUILD_VOICE') {
         return;
     }
     try {
-        await channel.delete('Expired event');
+        // Delete expired event channel
+        await channel.delete('Event has expired');
+        console.log('Event voice channel', channel.name, 'deleted');
     } catch (e) {
         console.error(`Failed to delete channel ${channel.id}: ${e}`);
     }
@@ -148,16 +170,16 @@ const deleteChannel = async (guild: Guild, channelId: string): Promise<void> => 
 
 const deleteExpiredEvents = async (eventCategoryChannel: GuildChannel, activeEvents: any): Promise<void> => {
     // Check if channels in category exists in active events, if so, keep it, otherwise delete it.
-    const channels = ((<CategoryChannel>(eventCategoryChannel)).children).array();
+    const channelChildren = (<CategoryChannel>eventCategoryChannel).children;
     const activeEventNames = activeEvents.map((x: ActiveEvent) => formatEventName(x));
-    for (const channel of channels) {
-        if (!channel) {
+    for (const [channelId, childChannel] of channelChildren) {
+        if (!childChannel) {
             continue;
         }
         // Check if channel does not exist in formatted active event names
-        if (!activeEventNames.includes(channel?.name)) {
+        if (!activeEventNames.includes(childChannel?.name)) {
             // Delete channel if it's not an active event
-            await deleteChannel(eventCategoryChannel.guild, channel?.id);
+            await deleteChannel(eventCategoryChannel.guild, channelId);
         }
     }
 };
@@ -166,12 +188,42 @@ const formatEventName = (event: ActiveEvent): string => {
     // Format event ends date
     const eventEndDate = event.end ? new Date(event.end) : NotAvailable;
     // Get channel name from event name and ends date
+    // Use mustache to template the channel's naming scheme 
     const channelName = render(config.channelNameFormat, {
-        month: eventEndDate !== NotAvailable ? eventEndDate.getMonth() + 1 : NotAvailable,
-        day: eventEndDate !== NotAvailable ? eventEndDate.getDate() : '',
+        month: eventEndDate !== NotAvailable
+            ? eventEndDate.getMonth() + 1
+            : NotAvailable,
+        day: eventEndDate !== NotAvailable
+            ? eventEndDate.getDate()
+            : '',
         name: event.name,
     });
     return channelName;
+};
+
+const setChannelPermissions = async (guild: Guild, channel: GuildChannel) => {
+    const everyoneId = guild.id;
+    const botId = client.user!.id;
+    const permissions = getDefaultPermissions(everyoneId, botId);
+    await channel.permissionOverwrites.set(permissions);
+};
+
+const getDefaultPermissions = (everyoneId: string, botId: string): any => {
+    const permissions = [{
+        id: everyoneId,
+        allow: ['VIEW_CHANNEL'],
+        deny: ['CONNECT'],
+    }, {
+        id: botId,
+        allow: [
+            'VIEW_CHANNEL',
+            'CONNECT',
+            'MANAGE_CHANNELS',
+            'MANAGE_MESSAGES',
+            'MANAGE_ROLES',
+        ],
+    }];
+    return permissions;
 };
 
 UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
@@ -183,36 +235,48 @@ UrlWatcher(urlToWatch, intervalM, async (): Promise<void> => {
             for (const webhook of config.webhooks) {
                 // Delete previous event messages if set
                 if (config.deletePreviousEvents) {
-                    getWebhookData(webhook)?.then(whData => {
-                        if (whData?.guild_id && whData?.channel_id) {
-                            const guild = client.guilds.cache.get(whData.guild_id);
-                            if (guild) {
-                                const channel = guild.channels.cache.get(whData.channel_id);
-                                try {
-                                    (channel as TextChannel).bulkDelete(100);
-                                } catch (err) {
-                                    console.error('Error:', err);
-                                }
+                    // Get information returned about webhook
+                    const webhookData = await getWebhookData(webhook);
+                    if (!webhookData) {
+                        // Failed to get webhook result data from response
+                        console.error(`Failed to get webhook data from ${webhook}`);
+                        continue;
+                    }
+                    // Check if webhook result response has 
+                    if (!webhookData?.guild_id || !webhookData?.channel_id) {
+                        // Missing required information from webhook data response
+                        continue;
+                    }
+                    const guild = client.guilds.cache.get(webhookData.guild_id);
+                    if (guild) {
+                        const channel = guild.channels.cache.get(webhookData.channel_id);
+                        try {
+                            // Ensure we only try to delete messages from text channels
+                            if (channel?.type == 'GUILD_TEXT') {
+                                (channel as TextChannel).bulkDelete(100);
                             }
+                        } catch (err) {
+                            // Fails if messages to delete are older than 14 days
+                            console.error('Error:', err);
                         }
-                    }).catch(err => {
-                        console.error(`Failed to get webhook data for ${webhook}: ${err}`);
-                    });
+                    }
                 }
                 await post(<string>webhook, payload);
             }
         }
-        // If bot token set we're logged into Discord bot
-        if (config.token) {
+        // Check that bot token and user ids list are set
+        if (config.token && config.userIds.length) {
+            // Create Discord embed that'll be sent to users
             const embed = await createActiveEventEmbed(event);
             // Send direct message to users
             for (const userId of config.userIds) {
                 const member = client.users.cache.get(userId);
-                if (member == null) {
+                if (!member || member == null) {
                     console.error(`Failed to get member by id ${userId}`);
                     continue;
                 }
-                await sendDm(member, { embed: embed });
+                // Send DM info about event to Discord user
+                await sendDm(member, { embed });
                 console.info(`New event direct message sent to ${member?.username} (${member?.id})`);
             }
         }

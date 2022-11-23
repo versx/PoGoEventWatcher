@@ -1,8 +1,8 @@
 'use strict';
 
 import { NoParamCallback } from 'fs';
-
-const utils = require('../services/utils.js');
+import { isEqual } from 'lodash';
+import { get, deepEqual } from '../services/utils';
 
 let previousData: any;
 
@@ -11,14 +11,14 @@ export const UrlWatcher = (urlToWatch: string, interval: number, changedCallback
      * Start checking for url address content changes
      */
     setInterval(async () => {
-        const data = await utils.get(urlToWatch);
+        const data = await get(urlToWatch);
         if (!previousData) {
             previousData = data;
             return;
         }
-        if (!utils.deepEqual(previousData, data)) {
+        if (!isEqual(previousData, data)) {
             previousData = data;
             changedCallback(null);
         }
     }, interval);
-}
+};
