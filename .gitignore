@@ -109,6 +109,6 @@ config.json
 # No logs
 logs
 
-# Only default locale files
-static/locales/*
-!static/locales/_*
+# # Only default locale files
+# static/locales/*
+# !static/locales/_*
